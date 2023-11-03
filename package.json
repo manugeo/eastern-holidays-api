@@ -1,0 +1,15 @@
+{
+  "name": "eastern-holidays-api",
+  "version": "1.0.0",
+  "description": "A REST API built with Express.js for managing bookings for houseboat bookings in Alappuzha, Kerala. The API provides endpoints for handling booking requests, fetching available boats, and more.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Manu Thomas",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
