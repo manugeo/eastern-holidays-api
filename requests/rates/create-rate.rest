@@ -2,7 +2,7 @@ POST http://localhost:3001/api/rates/ HTTP/1.1
 content-type: application/json
 
 {
-    "date": "2022-5-03T00:00:00.000Z",
+    "date": "2023-05-03T00:00:00.000Z",
     "baseRate": 8000,
     "adultRate": 600,
     "childRate": 450

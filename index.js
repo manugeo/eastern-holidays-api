@@ -1,7 +1,9 @@
+require('dotenv').config()
 const express = require('express')
 const morgan = require('morgan')
 const cors = require('cors')
 const app = express()
+const Rate = require('./models/rate')
 
 app.use(express.json())
 morgan.token('body', function (req, res) { return JSON.stringify(req.body) })
@@ -33,35 +35,42 @@ app.get('/', (req, res) => {
 })
 
 app.get('/api/rates', (req, res) => {
-  res.json(rates)
+  Rate.find({}).then(rates => {
+    res.json(rates)
+  })
 })
 
 app.get('/api/rates/:id', (req, res) => {
   const id = req.params.id
-  const rate = rates.find(r => r.id === id)
-  if (rate) {
-    res.json(rate)
-  } else {
-    res.status(404).send('Rate not found')
-  }
+  Rate.findById(id).then(rate => {
+    if (rate) {
+      res.json(rate)
+    } else {
+      res.status(404).json({ error: 'Rate not found' })
+    }
+  })
 })
 
 app.post('/api/rates', (req, res) => {
   const body = req.body
-  if (!body.date || !body.baseRate || !body.adultRate) {
+  if (!body.date || !body.baseRate || !body.adultRate || !body.childRate) {
     res.status(400).json({ error: 'Missing required fields' })
   }
-  const rate = {
-    date: body.date,
-    baseRate: body.baseRate,
-    adultRate: body.adultRate,
-    childRate: body.childRate,
-    infantRate: body.infantRate || 0
+  else if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(body.date)) {
+    res.status(400).json({ error: 'Invalid date format' })
   }
-  const maxId = Math.max(...rates.map(r => parseInt(r.id))) || 0
-  rate.id = (maxId + 1).toString()
-  rates.push(rate)
-  res.status(201).json(rate)
+  else {
+    const rate = new Rate({
+      date: new Date(body.date).setHours(0, 0, 0, 0),
+      baseRate: body.baseRate,
+      adultRate: body.adultRate,
+      childRate: body.childRate,
+      infantRate: body.infantRate || 0
+    })
+    rate.save().then(savedRate => {
+      res.json(savedRate)
+    })
+  }
 })
 
 const unknownEndpoint = (req, res) => {
