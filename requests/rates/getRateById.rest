@@ -1,0 +1,1 @@
+GET http://localhost:3001/api/rates/654654edfe2b6436e912dd39

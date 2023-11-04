@@ -1,0 +1,1 @@
+DELETE http://localhost:3001/api/rates/654654edfe2b6436e912dd39 HTTP/1.1
