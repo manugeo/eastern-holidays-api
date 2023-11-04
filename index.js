@@ -11,25 +11,6 @@ app.use(morgan(':method :url :status :response-time ms - :res[content-length] - 
 // Todo: Restrict origins by setting cors options.
 app.use(cors())
 
-let rates =   [
-  {
-    "id": '1',
-    "date": "2022-01-02T00:00:00.000Z",
-    "baseRate": 9000,
-    "adultRate": 500,
-    "childRate": 300,
-    "infantRate": 0
-  },
-  {
-    "id": '2',
-    "date": "2022-01-03T00:00:00.000Z",
-    "baseRate": 12000,
-    "adultRate": 700,
-    "childRate": 450,
-    "infantRate": 0
-  },
-]
-
 app.get('/', (req, res) => {
   res.send('<h1>Hello World!</h1>')
 })
@@ -40,7 +21,7 @@ app.get('/api/rates', (req, res) => {
   })
 })
 
-app.get('/api/rates/:id', (req, res) => {
+app.get('/api/rates/:id', (req, res, next) => {
   const id = req.params.id
   Rate.findById(id).then(rate => {
     if (rate) {
@@ -48,7 +29,7 @@ app.get('/api/rates/:id', (req, res) => {
     } else {
       res.status(404).json({ error: 'Rate not found' })
     }
-  })
+  }).catch(error => next(error))
 })
 
 app.post('/api/rates', (req, res) => {
@@ -73,10 +54,48 @@ app.post('/api/rates', (req, res) => {
   }
 })
 
+app.put('/api/rates/:id', (req, res, next) => {
+  const id = req.params.id
+  const rate = {
+    date: req.body.date,
+    baseRate: req.body.baseRate,
+    adultRate: req.body.adultRate,
+    childRate: req.body.childRate
+  }
+
+  Rate.findByIdAndUpdate(id, rate, { new: true }).then(updatedRate => {
+    res.json(updatedRate)
+  }).catch(error => next(error))
+})
+
+app.delete('/api/rates/:id', (req, res, next) => {
+  const id = req.params.id
+
+  console.log("About to delete...", id, Rate, Rate.findByIdAndUpdate, Rate.findByIdAndRemove);
+
+  // Note: For some reason 'Rate.findByIdAndRemove' does not work. But 'Rate.findByIdAndDelete' does.
+  // See: https://mongoosejs.com/docs/api/model.html#Model.findByIdAndDelete()
+  // No 'findByIdAndRemove' method is present here.
+
+  Rate.findByIdAndDelete(id).then(result => {
+    res.status(204).end()
+  }).catch(error => next(error))
+})
+
 const unknownEndpoint = (req, res) => {
   res.status(404).send({ error: 'unknown endpoint' })
 }
 app.use(unknownEndpoint)
+
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message)
+  if (error.name === 'CastError') {
+    return response.status(400).send({ error: 'malformatted id' })
+  } 
+  next(error)
+}
+// this has to be the last loaded middleware.
+app.use(errorHandler)
 
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
