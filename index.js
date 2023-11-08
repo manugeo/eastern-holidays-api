@@ -4,6 +4,7 @@ const morgan = require('morgan')
 const cors = require('cors')
 const app = express()
 const Rate = require('./models/rate')
+const { isoDateRegex } = require('./utils')
 
 app.use(express.json())
 morgan.token('body', function (req, res) { return JSON.stringify(req.body) })
@@ -32,12 +33,12 @@ app.get('/api/rates/:id', (req, res, next) => {
   }).catch(error => next(error))
 })
 
-app.post('/api/rates', (req, res) => {
+app.post('/api/rates', (req, res, next) => {
   const body = req.body
   if (!body.date || !body.baseRate || !body.adultRate || !body.childRate) {
     res.status(400).json({ error: 'Missing required fields' })
   }
-  else if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(body.date)) {
+  else if (isoDateRegex.test(body.date)) {
     res.status(400).json({ error: 'Invalid date format' })
   }
   else {
@@ -50,7 +51,7 @@ app.post('/api/rates', (req, res) => {
     })
     rate.save().then(savedRate => {
       res.json(savedRate)
-    })
+    }).catch(error => next(error))
   }
 })
 
@@ -63,7 +64,7 @@ app.put('/api/rates/:id', (req, res, next) => {
     childRate: req.body.childRate
   }
 
-  Rate.findByIdAndUpdate(id, rate, { new: true }).then(updatedRate => {
+  Rate.findByIdAndUpdate(id, rate, { new: true, runValidators: true, context: 'query' }).then(updatedRate => {
     res.json(updatedRate)
   }).catch(error => next(error))
 })
@@ -90,8 +91,11 @@ app.use(unknownEndpoint)
 const errorHandler = (error, request, response, next) => {
   console.error(error.message)
   if (error.name === 'CastError') {
-    return response.status(400).send({ error: 'malformatted id' })
-  } 
+    return response.status(400).send({ error: error.message })
+  }
+  else if (error.name === 'ValidationError') {
+    return response.status(400).json({ error: error.message })
+  }
   next(error)
 }
 // this has to be the last loaded middleware.
