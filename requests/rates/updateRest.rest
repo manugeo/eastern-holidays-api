@@ -1,9 +1,8 @@
-PUT http://localhost:3001/api/rates/65464478680f442c3ff41c8c HTTP/1.1
+PUT http://localhost:3001/api/rates/6546481efc3e76ccdd2f6b5b HTTP/1.1
 content-type: application/json
 
 {
-    "date": "2023-01-03T00:00:00.000Z",
-    "baseRate": 13000,
+    "baseRate": 9000,
     "adultRate": 500,
     "childRate": 300
 }
