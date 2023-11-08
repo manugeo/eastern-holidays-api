@@ -7,7 +7,7 @@ const Rate = require('./models/rate')
 const { isoDateRegex } = require('./utils')
 
 app.use(express.json())
-morgan.token('body', function (req, res) { return JSON.stringify(req.body) })
+morgan.token('body', function (req) { return JSON.stringify(req.body) })
 app.use(morgan(':method :url :status :response-time ms - :res[content-length] - :body'))
 // Todo: Restrict origins by setting cors options.
 app.use(cors())
@@ -72,13 +72,13 @@ app.put('/api/rates/:id', (req, res, next) => {
 app.delete('/api/rates/:id', (req, res, next) => {
   const id = req.params.id
 
-  console.log("About to delete...", id, Rate, Rate.findByIdAndUpdate, Rate.findByIdAndRemove);
+  console.log('About to delete...', id, Rate, Rate.findByIdAndUpdate, Rate.findByIdAndRemove)
 
   // Note: For some reason 'Rate.findByIdAndRemove' does not work. But 'Rate.findByIdAndDelete' does.
   // See: https://mongoosejs.com/docs/api/model.html#Model.findByIdAndDelete()
   // No 'findByIdAndRemove' method is present here.
 
-  Rate.findByIdAndDelete(id).then(result => {
+  Rate.findByIdAndDelete(id).then(() => {
     res.status(204).end()
   }).catch(error => next(error))
 })
@@ -101,10 +101,11 @@ const errorHandler = (error, request, response, next) => {
 // this has to be the last loaded middleware.
 app.use(errorHandler)
 
+// eslint-disable-next-line no-undef
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
 
 // Export the Express API
-module.exports = app;
+module.exports = app
