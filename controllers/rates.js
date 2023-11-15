@@ -1,11 +1,10 @@
 const ratesRouter = require('express').Router()
 const Rate = require('../models/rate')
-const { isoDateRegex } = require('../utils/utils')
+const { isValidDateString } = require('../utils/utils')
 
-ratesRouter.get('/', (req, res) => {
-  Rate.find({}).then(rates => {
-    res.json(rates)
-  })
+ratesRouter.get('/', async (req, res) => {
+  const rates = await Rate.find({})
+  res.json(rates)
 })
 
 ratesRouter.get('/:id', (req, res, next) => {
@@ -21,10 +20,11 @@ ratesRouter.get('/:id', (req, res, next) => {
 
 ratesRouter.post('/', (req, res, next) => {
   const body = req.body
-  if (!body.date || !body.baseRate || !body.adultRate || !body.childRate) {
+  // eslint-disable-next-line eqeqeq
+  if (!body.date || (body.baseRate == null) || (body.adultRate == null) || (body.childRate == null)) {
     res.status(400).json({ error: 'Missing required fields' })
   }
-  else if (isoDateRegex.test(body.date)) {
+  else if (!isValidDateString(body.date)) {
     res.status(400).json({ error: 'Invalid date format' })
   }
   else {
@@ -36,7 +36,7 @@ ratesRouter.post('/', (req, res, next) => {
       infantRate: body.infantRate || 0
     })
     rate.save().then(savedRate => {
-      res.json(savedRate)
+      res.status(201).json(savedRate)
     }).catch(error => next(error))
   }
 })
