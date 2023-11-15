@@ -3,35 +3,19 @@ const supertest = require('supertest')
 const app = require('../app')
 const api = supertest(app)
 const Rate = require('../models/rate')
-
-const initialRates = [
-  {
-    date: '2023-09-02T18:30:00.000Z',
-    baseRate: 9000,
-    adultRate: 500,
-    childRate: 300,
-    infantRate: 0
-  },
-  {
-    date: '2022-05-02T18:30:00.000Z',
-    baseRate: 12000,
-    adultRate: 700,
-    childRate: 450,
-    infantRate: 0
-  }
-]
+const helper = require('./test-helper')
 
 beforeEach(async () => {
   await Rate.deleteMany({})
-  let rateObject = new Rate(initialRates[0])
+  let rateObject = new Rate(helper.initialRates[0])
   await rateObject.save()
-  rateObject = new Rate(initialRates[1])
+  rateObject = new Rate(helper.initialRates[1])
   await rateObject.save()
 })
 
 test('all rates are returned', async () => {
   const response = await api.get('/api/rates')
-  expect(response.body).toHaveLength(initialRates.length)
+  expect(response.body).toHaveLength(helper.initialRates.length)
 })
 
 test('a specific rate is within the returned rates', async () => {
@@ -45,6 +29,31 @@ test('rates are returned as json', async () => {
     .get('/api/rates')
     .expect(200)
     .expect('Content-Type', /application\/json/)
+})
+
+test('a valid rate can be added', async () => {
+
+  await api
+    .post('/api/rates')
+    .send(helper.aValidRate)
+    .expect(201)
+    .expect('Content-Type', /application\/json/)
+
+  const ratesAtEnd = await helper.ratesInDb()
+  expect(ratesAtEnd).toHaveLength(helper.initialRates.length + 1)
+  const dates = ratesAtEnd.map(r => r.date)
+  expect(dates).toContain(helper.aValidRate.date)
+})
+
+test('rate without date is not added', async () => {
+  const newRate = {
+    baseRate: 9000,
+    adultRate: 500,
+    childRate: 300
+  }
+  await api.post('/api/rates').send(newRate).expect(400)
+  const ratesAtEnd = await helper.ratesInDb()
+  expect(ratesAtEnd).toHaveLength(helper.initialRates.length)
 })
 
 afterAll(async () => {
