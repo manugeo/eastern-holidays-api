@@ -7,18 +7,17 @@ ratesRouter.get('/', async (req, res) => {
   res.json(rates)
 })
 
-ratesRouter.get('/:id', (req, res, next) => {
+ratesRouter.get('/:id', async (req, res) => {
   const id = req.params.id
-  Rate.findById(id).then(rate => {
-    if (rate) {
-      res.json(rate)
-    } else {
-      res.status(404).json({ error: 'Rate not found' })
-    }
-  }).catch(error => next(error))
+  const rate = await Rate.findById(id)
+  if (rate) {
+    res.json(rate)
+  } else {
+    res.status(404).json({ error: 'Rate not found' })
+  }
 })
 
-ratesRouter.post('/', (req, res, next) => {
+ratesRouter.post('/', async (req, res) => {
   const body = req.body
   // eslint-disable-next-line eqeqeq
   if (!body.date || (body.baseRate == null) || (body.adultRate == null) || (body.childRate == null)) {
@@ -35,13 +34,13 @@ ratesRouter.post('/', (req, res, next) => {
       childRate: body.childRate,
       infantRate: body.infantRate || 0
     })
-    rate.save().then(savedRate => {
-      res.status(201).json(savedRate)
-    }).catch(error => next(error))
+    const savedRate = await rate.save()
+    res.status(201).json(savedRate)
+
   }
 })
 
-ratesRouter.put('/:id', (req, res, next) => {
+ratesRouter.put('/:id', async (req, res) => {
   const id = req.params.id
   const rate = {
     date: req.body.date,
@@ -49,22 +48,19 @@ ratesRouter.put('/:id', (req, res, next) => {
     adultRate: req.body.adultRate,
     childRate: req.body.childRate
   }
-
-  Rate.findByIdAndUpdate(id, rate, { new: true, runValidators: true, context: 'query' }).then(updatedRate => {
-    res.json(updatedRate)
-  }).catch(error => next(error))
+  const updatedRate = await Rate.findByIdAndUpdate(id, rate, { new: true, runValidators: true, context: 'query' })
+  res.json(updatedRate)
 })
 
-ratesRouter.delete('/:id', (req, res, next) => {
+ratesRouter.delete('/:id', async (req, res) => {
   const id = req.params.id
 
   // Note: For some reason 'Rate.findByIdAndRemove' does not work. But 'Rate.findByIdAndDelete' does.
   // See: https://mongoosejs.com/docs/api/model.html#Model.findByIdAndDelete()
   // No 'findByIdAndRemove' method is present here.
 
-  Rate.findByIdAndDelete(id).then(() => {
-    res.status(204).end()
-  }).catch(error => next(error))
+  await Rate.findByIdAndDelete(id)
+  res.status(204).end()
 })
 
 module.exports = ratesRouter

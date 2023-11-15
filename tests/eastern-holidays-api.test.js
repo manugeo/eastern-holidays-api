@@ -56,6 +56,28 @@ test('rate without date is not added', async () => {
   expect(ratesAtEnd).toHaveLength(helper.initialRates.length)
 })
 
+test('a specific rate can be viewed', async () => {
+  const ratesAtStart = await helper.ratesInDb()
+  const rateToView = ratesAtStart[0]
+
+  const resultRate = await api.get(`/api/rates/${rateToView.id}`).expect(200).expect('Content-Type', /application\/json/)
+  expect(resultRate.body).toEqual(rateToView)
+})
+
+test('a rate can be deleted', async () => {
+  const ratesAtStart = await helper.ratesInDb()
+  const rateToDelete = ratesAtStart[0]
+
+  await api
+    .delete(`/api/rates/${rateToDelete.id}`)
+    .expect(204)
+  const ratesAtEnd = await helper.ratesInDb()
+  expect(ratesAtEnd).toHaveLength(helper.initialRates.length - 1)
+
+  const dates = ratesAtEnd.map(r => r.date)
+  expect(dates).not.toContain(rateToDelete.date)
+})
+
 afterAll(async () => {
   await mongoose.connection.close()
 })

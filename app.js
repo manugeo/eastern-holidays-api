@@ -1,5 +1,6 @@
 const express = require('express')
 const cors = require('cors')
+require('express-async-errors') // This should be loaded before you import your routes
 const app = express()
 const ratesRouter = require('./controllers/rates')
 const { requestLogger, unknownEndpoint, errorHandler } = require('./utils/middleware')
