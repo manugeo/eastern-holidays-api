@@ -7,10 +7,10 @@ const helper = require('./test-helper')
 
 beforeEach(async () => {
   await Rate.deleteMany({})
-  let rateObject = new Rate(helper.initialRates[0])
-  await rateObject.save()
-  rateObject = new Rate(helper.initialRates[1])
-  await rateObject.save()
+  for (let rate of helper.initialRates) {
+    let rateObject = new Rate(rate)
+    await rateObject.save()
+  }
 })
 
 test('all rates are returned', async () => {
