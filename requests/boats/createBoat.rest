@@ -1,0 +1,11 @@
+POST http://localhost:3001/api/boats HTTP/1.1
+content-type: application/json
+
+{
+  "numberOfBedrooms": 2,
+  "boatType": "luxury",
+  "minAdultsRequired": 2,
+  "defaultBaseRate": 9000,
+  "defaultAdultRate": 1500,
+  "defaultChildRate": 750
+}

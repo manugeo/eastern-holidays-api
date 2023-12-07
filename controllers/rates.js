@@ -54,13 +54,16 @@ ratesRouter.put('/:id', async (req, res) => {
 
 ratesRouter.delete('/:id', async (req, res) => {
   const id = req.params.id
-
   // Note: For some reason 'Rate.findByIdAndRemove' does not work. But 'Rate.findByIdAndDelete' does.
   // See: https://mongoosejs.com/docs/api/model.html#Model.findByIdAndDelete()
   // No 'findByIdAndRemove' method is present here.
-
-  await Rate.findByIdAndDelete(id)
-  res.status(204).end()
+  const deletedRate = await Rate.findByIdAndDelete(id)
+  if (deletedRate) {
+    res.status(204).end()
+  }
+  else {
+    res.status(404).json({ error: 'Rate not found' })
+  }
 })
 
 module.exports = ratesRouter

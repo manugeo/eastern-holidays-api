@@ -30,6 +30,11 @@ const availabilitySchema = new mongoose.Schema({
   infantRate: {
     type: Number,
     required: true
+  },
+  boat: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Boat',
+    required: true
   }
 })
 

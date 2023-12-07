@@ -17,6 +17,7 @@ availabilitiesRouter.get('/:id', async (req, res) => {
   }
 })
 
+// Todo: Handle new boat property. Make sure to update the corresponding boat object as well.
 availabilitiesRouter.post('/', async (req, res) => {
   const body = req.body
   const { date, isAvailable, baseRate, adultRate, childRate, infantRate } = body
@@ -67,7 +68,12 @@ availabilitiesRouter.put('/:id', async (req, res) => {
       infantRate: infantRate || 0
     }
     const updatedAvailability = await Availability.findByIdAndUpdate(id, availability, { new: true, runValidators: true, context: 'query' })
-    res.json(updatedAvailability)
+    if (!updatedAvailability) {
+      res.status(404).json({ error: 'Availability not found' })
+    }
+    else {
+      res.json(updatedAvailability)
+    }
   }
 })
 
@@ -76,8 +82,13 @@ availabilitiesRouter.delete('/:id', async (req, res) => {
   // Note: For some reason 'Rate.findByIdAndRemove' does not work. But 'Rate.findByIdAndDelete' does.
   // See: https://mongoosejs.com/docs/api/model.html#Model.findByIdAndDelete()
   // No 'findByIdAndRemove' method is present here.
-  await Availability.findByIdAndDelete(id)
-  res.status(204).end()
+  const deletedAvailability = await Availability.findByIdAndDelete(id)
+  if (deletedAvailability) {
+    res.status(204).end()
+  }
+  else {
+    res.status(404).json({ error: 'Availability not found' })
+  }
 })
 
 module.exports = availabilitiesRouter

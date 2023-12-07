@@ -4,6 +4,7 @@ require('express-async-errors') // This should be loaded before you import your 
 const app = express()
 const ratesRouter = require('./controllers/rates')
 const availabilitiesRouter = require('./controllers/availabilities')
+const boatsRouter = require('./controllers/boats')
 const { requestLogger, unknownEndpoint, errorHandler } = require('./utils/middleware')
 
 // Todo: Restrict origins by setting cors options.
@@ -13,6 +14,7 @@ app.use(requestLogger)
 
 app.use('/api/rates', ratesRouter)
 app.use('/api/availabilities', availabilitiesRouter)
+app.use('/api/boats', boatsRouter)
 
 app.use(unknownEndpoint)
 // Note: This has to be the last loaded middleware.
