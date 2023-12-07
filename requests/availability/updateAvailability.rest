@@ -1,0 +1,11 @@
+PUT http://localhost:3001/api/availabilities/65719245eae018aef5a6e7d9 HTTP/1.1
+content-type: application/json
+
+{
+  "date": "2024-01-14T18:30:00.000Z",
+  "isAvailable": true,
+  "baseRate": 7500,
+  "adultRate": 400,
+  "childRate": 250,
+  "id": "65719245eae018aef5a6e7d9"
+}

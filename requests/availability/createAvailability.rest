@@ -1,0 +1,10 @@
+POST http://localhost:3001/api/availabilities HTTP/1.1
+content-type: application/json
+
+{
+  "date": "2024-01-15T09:51:12.325Z",
+  "isAvailable": false,
+  "baseRate": 7500,
+  "adultRate": 400,
+  "childRate": 250
+}

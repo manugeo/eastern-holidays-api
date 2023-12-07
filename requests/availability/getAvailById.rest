@@ -1,0 +1,1 @@
+GET http://localhost:3001/api/availabilities/65719245eae018aef5a6e7d9

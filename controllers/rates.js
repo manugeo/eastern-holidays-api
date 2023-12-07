@@ -36,7 +36,6 @@ ratesRouter.post('/', async (req, res) => {
     })
     const savedRate = await rate.save()
     res.status(201).json(savedRate)
-
   }
 })
 
@@ -46,7 +45,8 @@ ratesRouter.put('/:id', async (req, res) => {
     date: req.body.date,
     baseRate: req.body.baseRate,
     adultRate: req.body.adultRate,
-    childRate: req.body.childRate
+    childRate: req.body.childRate,
+    infantRate: req.body.infantRate
   }
   const updatedRate = await Rate.findByIdAndUpdate(id, rate, { new: true, runValidators: true, context: 'query' })
   res.json(updatedRate)
