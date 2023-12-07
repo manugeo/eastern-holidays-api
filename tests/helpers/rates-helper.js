@@ -1,4 +1,4 @@
-const Rate = require('../models/rate')
+const Rate = require('../../models/rate')
 
 const initialRates = [
   {

@@ -3,7 +3,7 @@ const supertest = require('supertest')
 const app = require('../app')
 const api = supertest(app)
 const Rate = require('../models/rate')
-const helper = require('./test-helper')
+const helper = require('./helpers/rates-helper')
 
 beforeEach(async () => {
   await Rate.deleteMany({})
