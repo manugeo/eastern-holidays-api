@@ -32,13 +32,11 @@ test('rates are returned as json', async () => {
 })
 
 test('a valid rate can be added', async () => {
-
   await api
     .post('/api/rates')
     .send(helper.validDocs.rate)
     .expect(201)
     .expect('Content-Type', /application\/json/)
-
   const ratesAtEnd = await helper.docsInDb(Rate)
   expect(ratesAtEnd).toHaveLength(helper.initialDocs.rates.length + 1)
   const dates = ratesAtEnd.map(r => r.date)
