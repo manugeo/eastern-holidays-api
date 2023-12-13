@@ -3,11 +3,11 @@ const supertest = require('supertest')
 const app = require('../app')
 const api = supertest(app)
 const Boat = require('../models/boat')
-const helper = require('./helpers/boats-helper')
+const helper = require('./helper')
 
 beforeEach(async () => {
   await Boat.deleteMany({})
-  for (let boat of helper.initialBoats) {
+  for (let boat of helper.initialDocs.boats) {
     let boatObject = new Boat(boat)
     await boatObject.save()
   }
@@ -15,7 +15,7 @@ beforeEach(async () => {
 
 test('all boats are returned', async () => {
   const response = await api.get('/api/boats')
-  expect(response.body).toHaveLength(helper.initialBoats.length)
+  expect(response.body).toHaveLength(helper.initialDocs.boats.length)
 })
 
 // Todo: Add rest of tests

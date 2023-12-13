@@ -3,11 +3,11 @@ const supertest = require('supertest')
 const app = require('../app')
 const api = supertest(app)
 const Rate = require('../models/rate')
-const helper = require('./helpers/rates-helper')
+const helper = require('./helper')
 
 beforeEach(async () => {
   await Rate.deleteMany({})
-  for (let rate of helper.initialRates) {
+  for (let rate of helper.initialDocs.rates) {
     let rateObject = new Rate(rate)
     await rateObject.save()
   }
@@ -15,7 +15,7 @@ beforeEach(async () => {
 
 test('all rates are returned', async () => {
   const response = await api.get('/api/rates')
-  expect(response.body).toHaveLength(helper.initialRates.length)
+  expect(response.body).toHaveLength(helper.initialDocs.rates.length)
 })
 
 test('a specific rate is within the returned rates', async () => {
@@ -35,14 +35,14 @@ test('a valid rate can be added', async () => {
 
   await api
     .post('/api/rates')
-    .send(helper.aValidRate)
+    .send(helper.validDocs.rate)
     .expect(201)
     .expect('Content-Type', /application\/json/)
 
-  const ratesAtEnd = await helper.ratesInDb()
-  expect(ratesAtEnd).toHaveLength(helper.initialRates.length + 1)
+  const ratesAtEnd = await helper.docsInDb(Rate)
+  expect(ratesAtEnd).toHaveLength(helper.initialDocs.rates.length + 1)
   const dates = ratesAtEnd.map(r => r.date)
-  expect(dates).toContain(helper.aValidRate.date)
+  expect(dates).toContain(helper.validDocs.rate.date)
 })
 
 test('rate without date is not added', async () => {
@@ -52,12 +52,12 @@ test('rate without date is not added', async () => {
     childRate: 300
   }
   await api.post('/api/rates').send(newRate).expect(400)
-  const ratesAtEnd = await helper.ratesInDb()
-  expect(ratesAtEnd).toHaveLength(helper.initialRates.length)
+  const ratesAtEnd = await helper.docsInDb(Rate)
+  expect(ratesAtEnd).toHaveLength(helper.initialDocs.rates.length)
 })
 
 test('a specific rate can be viewed', async () => {
-  const ratesAtStart = await helper.ratesInDb()
+  const ratesAtStart = await helper.docsInDb(Rate)
   const rateToView = ratesAtStart[0]
 
   const resultRate = await api.get(`/api/rates/${rateToView.id}`).expect(200).expect('Content-Type', /application\/json/)
@@ -65,14 +65,14 @@ test('a specific rate can be viewed', async () => {
 })
 
 test('a rate can be deleted', async () => {
-  const ratesAtStart = await helper.ratesInDb()
+  const ratesAtStart = await helper.docsInDb(Rate)
   const rateToDelete = ratesAtStart[0]
 
   await api
     .delete(`/api/rates/${rateToDelete.id}`)
     .expect(204)
-  const ratesAtEnd = await helper.ratesInDb()
-  expect(ratesAtEnd).toHaveLength(helper.initialRates.length - 1)
+  const ratesAtEnd = await helper.docsInDb(Rate)
+  expect(ratesAtEnd).toHaveLength(helper.initialDocs.rates.length - 1)
 
   const dates = ratesAtEnd.map(r => r.date)
   expect(dates).not.toContain(rateToDelete.date)
