@@ -75,7 +75,6 @@ describe('testing out boat creation using invalid data', () => {
   })
 })
 
-// A boat can be updated
 test('a boat can be updated', async () => {
   const boatsAtStart = await docsInDb(Boat)
   const boatToUpdate = boatsAtStart[0]
@@ -87,7 +86,6 @@ test('a boat can be updated', async () => {
   expect(response.body.numberOfBedrooms).toBe(5)
 })
 
-// A boat can be deleted
 test('a boat can be deleted', async () => {
   const boatsAtStart = await docsInDb(Boat)
   const boatToDelete = boatsAtStart[0]
