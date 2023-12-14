@@ -1,5 +1,7 @@
 const availabilitiesRouter = require('express').Router()
 const Availability = require('../models/availability')
+const Boat = require('../models/boat')
+const { requiredFeilds } = require('../tests/helper')
 const { isValidDateString } = require('../utils/utils')
 
 availabilitiesRouter.get('/', async (req, res) => {
@@ -20,27 +22,38 @@ availabilitiesRouter.get('/:id', async (req, res) => {
 // Todo: Handle new boat property. Make sure to update the corresponding boat object as well.
 availabilitiesRouter.post('/', async (req, res) => {
   const body = req.body
-  const { date, isAvailable, baseRate, adultRate, childRate, infantRate } = body
-  // eslint-disable-next-line eqeqeq
-  if (!date || (isAvailable == null) || (baseRate == null) || (adultRate == null) || (childRate == null)) {
-    res.status(400).json({ error: 'Missing required fields' })
+  const { date, isAvailable, baseRate, adultRate, childRate, infantRate, boat } = body
+  for (const field of requiredFeilds.availability) {
+    // eslint-disable-next-line eqeqeq
+    if (body[field] == null) {
+      res.status(400).json({ error: `Missing required field: ${field}` })
+    }
   }
-  else if (!isValidDateString(date)) {
+  if (!isValidDateString(date)) {
     res.status(400).json({ error: 'Invalid date format' })
   }
   else if (typeof isAvailable !== 'boolean') {
     res.status(400).json({ error: 'isAvailable must be a boolean' })
   }
   else {
+    // Make sure boat id received in 'boat' property is valid
+    const boatInDb = await Boat.findById(boat)
+    if (!boatInDb) {
+      res.status(400).json({ error: 'Invalid boat id' })
+    }
     const availability = new Availability({
       date: new Date(date).setHours(0, 0, 0, 0),
       isAvailable,
       baseRate,
       adultRate,
       childRate,
-      infantRate: infantRate || 0
+      infantRate: infantRate || 0,
+      boat
     })
     const savedAvailability = await availability.save()
+    // Note: 'boatInDb' needs to be updated as well.
+    boatInDb.availabilities = [...boatInDb.availabilities, savedAvailability._id]
+    await boatInDb.save()
     res.status(201).json(savedAvailability)
   }
 })
@@ -65,7 +78,8 @@ availabilitiesRouter.put('/:id', async (req, res) => {
       baseRate: baseRate,
       adultRate: adultRate,
       childRate: childRate,
-      infantRate: infantRate || 0
+      infantRate: infantRate || 0,
+      // Note: An availabiliy's boat cannot be changed.
     }
     const updatedAvailability = await Availability.findByIdAndUpdate(id, availability, { new: true, runValidators: true, context: 'query' })
     if (!updatedAvailability) {

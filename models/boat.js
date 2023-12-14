@@ -47,6 +47,11 @@ const boatSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  agency: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Agency',
+    required: true,
+  },
   availabilities: [
     {
       type: mongoose.Schema.Types.ObjectId,
@@ -63,4 +68,5 @@ boatSchema.set('toJSON', {
   },
 })
 
-module.exports = mongoose.model('Boat', boatSchema)
+const Boat = mongoose.model('Boat', boatSchema)
+module.exports = Boat

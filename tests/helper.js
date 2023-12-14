@@ -34,6 +34,29 @@ const initialDocs = {
       defaultChildRate: 500,
       defaultInfantRate: 0,
     }
+  ],
+  availabilities: [
+    {
+      "date": "2024-01-15T09:51:12.325Z",
+      "isAvailable": false,
+      "baseRate": 7500,
+      "adultRate": 400,
+      "childRate": 250
+    },
+    {
+      "date": "2024-01-16T09:51:12.325Z",
+      "isAvailable": true,
+      "baseRate": 6000,
+      "adultRate": 800,
+      "childRate": 250
+    },
+    {
+      "date": "2024-01-17T09:51:12.325Z",
+      "isAvailable": true,
+      "baseRate": 12000,
+      "adultRate": 900,
+      "childRate": 250
+    }
   ]
 }
 
@@ -55,11 +78,18 @@ const validDocs = {
   }
 }
 
+const requiredFeilds = {
+  rate: ['date', 'baseRate', 'adultRate', 'childRate', 'infantRate'],
+  agency: ['name'],
+  boat: ['numberOfBedrooms', 'boatType', 'minAdultsRequired', 'defaultBaseRate', 'defaultAdultRate', 'defaultChildRate', 'agency'],
+  availability: ['date', 'isAvailable', 'baseRate', 'adultRate', 'childRate', 'boat']
+}
+
 const docsInDb = async (model) => {
   const docs = await model.find({})
   return docs.map(doc => doc.toJSON())
 }
 
 module.exports = {
-  initialDocs, validDocs, docsInDb
+  initialDocs, validDocs, requiredFeilds, docsInDb
 }

@@ -1,12 +1,14 @@
-const boatRouter = require('express').Router()
+const boatsRouter = require('express').Router()
 const Boat = require('../models/boat')
+const Agency = require('../models/agency')
+const { requiredFeilds } = require('../tests/helper')
 
-boatRouter.get('/', async (req, res) => {
+boatsRouter.get('/', async (req, res) => {
   const boats = await Boat.find({})
   res.json(boats)
 })
 
-boatRouter.get('/:id', async (req, res) => {
+boatsRouter.get('/:id', async (req, res) => {
   const id = req.params.id
   const boat = await Boat.findById(id)
   if (boat) {
@@ -16,18 +18,20 @@ boatRouter.get('/:id', async (req, res) => {
   }
 })
 
-boatRouter.post('/', async (req, res) => {
+boatsRouter.post('/', async (req, res) => {
   const body = req.body
   const {
     numberOfBedrooms, boatType, minAdultsRequired,
     defaultBaseRate, defaultAdultRate, defaultChildRate, defaultInfantRate,
-    availabilities
+    agency
   } = body
-  // eslint-disable-next-line eqeqeq
-  if ((numberOfBedrooms == null) || (boatType == null) || (minAdultsRequired == null) || (defaultBaseRate == null) || (defaultAdultRate == null) || (defaultChildRate == null)) {
-    res.status(400).json({ error: 'Missing required fields' })
+  for (const field of requiredFeilds.boat) {
+    // eslint-disable-next-line eqeqeq
+    if (body[field] == null) {
+      res.status(400).json({ error: `Missing required field: ${field}` })
+    }
   }
-  else if (numberOfBedrooms < 0 || numberOfBedrooms > 10) {
+  if (numberOfBedrooms < 0 || numberOfBedrooms > 10) {
     res.status(400).json({ error: 'Number of bedrooms must be between 0 and 10' })
   }
   else if (!['deluxe', 'premium', 'luxury'].includes(boatType)) {
@@ -37,6 +41,10 @@ boatRouter.post('/', async (req, res) => {
     res.status(400).json({ error: 'Minimum number of adults required must be greater than 0' })
   }
   else {
+    const agencyInDb = await Agency.findById(agency)
+    if (!agencyInDb) {
+      res.status(404).json({ error: 'Agency not found' })
+    }
     const boat = new Boat({
       numberOfBedrooms,
       boatType,
@@ -45,26 +53,32 @@ boatRouter.post('/', async (req, res) => {
       defaultAdultRate,
       defaultChildRate,
       defaultInfantRate: defaultInfantRate || 0,
-      availabilities: availabilities || []
+      agency,
+      // Note: Boats availability is not added from here. It gets added from the 'availability' router.
+      availabilities: []
     })
     const savedBoat = await boat.save()
+    // Note: 'agencyInDb' needs to be updated as well.
+    agencyInDb.boats = [...agencyInDb.boats, savedBoat._id]
+    await agencyInDb.save()
     res.status(201).json(savedBoat)
   }
 })
 
-boatRouter.put('/:id', async (req, res) => {
+boatsRouter.put('/:id', async (req, res) => {
   const id = req.params.id
   const body = req.body
   const {
     numberOfBedrooms, boatType, minAdultsRequired,
-    defaultBaseRate, defaultAdultRate, defaultChildRate, defaultInfantRate,
-    availabilities
+    defaultBaseRate, defaultAdultRate, defaultChildRate, defaultInfantRate
   } = body
-  // eslint-disable-next-line eqeqeq
-  if ((numberOfBedrooms == null) || (boatType == null) || (minAdultsRequired == null) || (defaultBaseRate == null) || (defaultAdultRate == null) || (defaultChildRate == null)) {
-    res.status(400).json({ error: 'Missing required fields' })
+  for (const field of requiredFeilds.boat) {
+    // eslint-disable-next-line eqeqeq
+    if (body[field] == null) {
+      res.status(400).json({ error: `Missing required field: ${field}` })
+    }
   }
-  else if (numberOfBedrooms < 0 || numberOfBedrooms > 10) {
+  if (numberOfBedrooms < 0 || numberOfBedrooms > 10) {
     res.status(400).json({ error: 'Number of bedrooms must be between 0 and 10' })
   }
   else if (!['deluxe', 'premium', 'luxury'].includes(boatType)) {
@@ -82,7 +96,8 @@ boatRouter.put('/:id', async (req, res) => {
       defaultAdultRate,
       defaultChildRate,
       defaultInfantRate: defaultInfantRate || 0,
-      availabilities: availabilities || []
+      // Note: 'agency' is prop cannot be updated after creation.
+      // Note: Boats availability is not updated from here. It gets updated from the 'availability' router.
     }
     const updatedBoat = await Boat.findByIdAndUpdate(id, boat, { new: true, runValidators: true, context: 'query' })
     if (!updatedBoat) {
@@ -94,7 +109,7 @@ boatRouter.put('/:id', async (req, res) => {
   }
 })
 
-boatRouter.delete('/:id', async (req, res) => {
+boatsRouter.delete('/:id', async (req, res) => {
   const id = req.params.id
   const deletedBoat = await Boat.findByIdAndDelete(id)
   if (deletedBoat) {
@@ -105,4 +120,4 @@ boatRouter.delete('/:id', async (req, res) => {
   }
 })
 
-module.exports = boatRouter
+module.exports = boatsRouter

@@ -3,9 +3,10 @@ content-type: application/json
 
 {
   "numberOfBedrooms": 2,
-  "boatType": "luxury",
+  "boatType": "premium",
   "minAdultsRequired": 2,
-  "defaultBaseRate": 9000,
-  "defaultAdultRate": 1500,
-  "defaultChildRate": 750
+  "defaultBaseRate": 7000,
+  "defaultAdultRate": 1200,
+  "defaultChildRate": 750,
+  "agency": "657a9ff987f26a3a08e04d27"
 }
