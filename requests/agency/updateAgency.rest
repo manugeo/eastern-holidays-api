@@ -1,0 +1,6 @@
+PUT http://localhost:3001/api/agencies/657a9ff987f26a3a08e04d27 HTTP/1.1
+Content-Type: application/json
+
+{
+  "name": "Test Agency 102"
+}

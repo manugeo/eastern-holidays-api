@@ -2,9 +2,10 @@ POST http://localhost:3001/api/availabilities HTTP/1.1
 content-type: application/json
 
 {
-  "date": "2024-01-15T09:51:12.325Z",
-  "isAvailable": false,
+  "date": "2023-01-16T09:51:12.325Z",
+  "isAvailable": true,
   "baseRate": 7500,
   "adultRate": 400,
-  "childRate": 250
+  "childRate": 250,
+  "boat": "657ab28dd736bfe638723db5"
 }
