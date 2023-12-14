@@ -1,4 +1,5 @@
 const availabilitiesRouter = require('express').Router()
+const { default: mongoose } = require('mongoose')
 const Availability = require('../models/availability')
 const Boat = require('../models/boat')
 const { requiredFeilds } = require('../tests/helper')
@@ -36,10 +37,13 @@ availabilitiesRouter.post('/', async (req, res) => {
     res.status(400).json({ error: 'isAvailable must be a boolean' })
   }
   else {
-    // Make sure boat id received in 'boat' property is valid
+    const isBoatIdValid = mongoose.Types.ObjectId.isValid(boat)
+    if (!isBoatIdValid) {
+      res.status(400).json({ error: 'Invalid boat id' })
+    }
     const boatInDb = await Boat.findById(boat)
     if (!boatInDb) {
-      res.status(400).json({ error: 'Invalid boat id' })
+      res.status(404).json({ error: 'Boat not found' })
     }
     const availability = new Availability({
       date: new Date(date).setHours(0, 0, 0, 0),

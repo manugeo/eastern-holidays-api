@@ -3,26 +3,35 @@ const supertest = require('supertest')
 const app = require('../app')
 const api = supertest(app)
 const Boat = require('../models/boat')
-const { initialDocs, validDocs, docsInDb } = require('./helper')
+const { initialDocs, validDocs, docsInDb, requiredFeilds } = require('./helper')
+const Agency = require('../models/agency')
 
 beforeEach(async () => {
+  await Agency.deleteMany({})
   await Boat.deleteMany({})
+  const agency = initialDocs.agencies[0]
+  const agencyObject = new Agency(agency)
+  await agencyObject.save()
   for (let boat of initialDocs.boats) {
+    boat.agency = agencyObject._id.toString()
     let boatObject = new Boat(boat)
     await boatObject.save()
   }
 })
 
-test('all boats are returned', async () => {
+test('all boats are returned and have agency', async () => {
   const response = await api.get('/api/boats')
   expect(response.body).toHaveLength(initialDocs.boats.length)
+  expect(response.body[0]).toHaveProperty('agency')
+  expect(response.body[0].agency).toHaveProperty('name')
 })
 
-test('a specific boat is within the returned boats', async () => {
+test('a specific boat is within the returned boats and has agency', async () => {
   const boatsAtStart = await docsInDb(Boat)
   const boatToView = boatsAtStart[0]
   const resultBoat = await api.get(`/api/boats/${boatToView.id}`).expect(200).expect('Content-Type', /application\/json/)
-  expect(resultBoat.body).toEqual(boatToView)
+  expect(resultBoat.body.id).toEqual(boatToView.id)
+  expect(resultBoat.body.agency).toHaveProperty('name')
 })
 
 test('boats are returned as json', async () => {
@@ -33,9 +42,12 @@ test('boats are returned as json', async () => {
 })
 
 test('a valid boat can be added', async () => {
+  const agenciesInDb = await docsInDb(Agency)
+  const agency = agenciesInDb[0]
+  const boat = { ...validDocs.boat, agency: agency.id }
   await api
     .post('/api/boats')
-    .send(validDocs.boat)
+    .send(boat)
     .expect(201)
     .expect('Content-Type', /application\/json/)
   const boatsAtEnd = await docsInDb(Boat)
@@ -43,31 +55,37 @@ test('a valid boat can be added', async () => {
 })
 
 describe('testing out boat creation using invalid data', () => {
-  test.each([
-    'numberOfBedrooms', 'boatType', 'minAdultsRequired', 'defaultBaseRate', 'defaultAdultRate', 'defaultChildRate'
-  ])('fails with correct message when missing %s', async (field) => {
-    const boat = { ...validDocs.boat }
+  test.each(requiredFeilds.boat)('fails with correct message when missing %s', async (field) => {
+    const agenciesInDb = await docsInDb(Agency)
+    const agency = agenciesInDb[0]
+    const boat = { ...validDocs.boat, agency: agency.id }
     delete boat[field]
     const response = await api.post('/api/boats').send(boat)
     expect(response.status).toBe(400)
-    expect(response.body.error).toContain('Missing required field')
+    expect(response.body.error).toContain(`Missing required field: ${field}`)
   })
   test('fails with correct message when number of bedrooms is not between 0 and 10', async () => {
-    const boat = { ...validDocs.boat }
+    const agenciesInDb = await docsInDb(Agency)
+    const agency = agenciesInDb[0]
+    const boat = { ...validDocs.boat, agency: agency.id }
     boat.numberOfBedrooms = 100
     const response = await api.post('/api/boats').send(boat)
     expect(response.status).toBe(400)
     expect(response.body.error).toContain('Number of bedrooms must be between 0 and 10')
   })
   test('fails with correct message when boat type is not one of the following: deluxe, premium, luxury', async () => {
-    const boat = { ...validDocs.boat }
+    const agenciesInDb = await docsInDb(Agency)
+    const agency = agenciesInDb[0]
+    const boat = { ...validDocs.boat, agency: agency.id }
     boat.boatType = 'invalid'
     const response = await api.post('/api/boats').send(boat)
     expect(response.status).toBe(400)
     expect(response.body.error).toContain('Boat type must be one of the following: deluxe, premium, luxury')
   })
   test('fails with correct message when minimum number of adults required is less than 1', async () => {
-    const boat = { ...validDocs.boat }
+    const agenciesInDb = await docsInDb(Agency)
+    const agency = agenciesInDb[0]
+    const boat = { ...validDocs.boat, agency: agency.id }
     boat.minAdultsRequired = 0
     const response = await api.post('/api/boats').send(boat)
     expect(response.status).toBe(400)

@@ -47,4 +47,5 @@ availabilitySchema.set('toJSON', {
   }
 })
 
-module.exports = mongoose.model('Availability', availabilitySchema)
+const Availability = mongoose.model('Availability', availabilitySchema)
+module.exports = Availability

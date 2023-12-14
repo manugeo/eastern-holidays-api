@@ -15,6 +15,14 @@ const initialDocs = {
       infantRate: 0
     }
   ],
+  agencies: [
+    {
+      name: 'Boat Company'
+    },
+    {
+      name: 'Holiday Inn'
+    }
+  ],
   boats: [
     {
       numberOfBedrooms: 2,
@@ -23,7 +31,7 @@ const initialDocs = {
       defaultBaseRate: 9000,
       defaultAdultRate: 1500,
       defaultChildRate: 750,
-      defaultInfantRate: 0,
+      defaultInfantRate: 0
     },
     {
       numberOfBedrooms: 1,
@@ -32,30 +40,25 @@ const initialDocs = {
       defaultBaseRate: 5000,
       defaultAdultRate: 1000,
       defaultChildRate: 500,
-      defaultInfantRate: 0,
+      defaultInfantRate: 0
     }
   ],
   availabilities: [
     {
-      "date": "2024-01-15T09:51:12.325Z",
-      "isAvailable": false,
-      "baseRate": 7500,
-      "adultRate": 400,
-      "childRate": 250
+      date: "2024-01-14T18:30:00.000Z",
+      isAvailable: false,
+      baseRate: 7500,
+      adultRate: 400,
+      childRate: 250,
+      infantRate: 0
     },
     {
-      "date": "2024-01-16T09:51:12.325Z",
-      "isAvailable": true,
-      "baseRate": 6000,
-      "adultRate": 800,
-      "childRate": 250
-    },
-    {
-      "date": "2024-01-17T09:51:12.325Z",
-      "isAvailable": true,
-      "baseRate": 12000,
-      "adultRate": 900,
-      "childRate": 250
+      date: "2024-01-15T18:30:00.000Z",
+      isAvailable: true,
+      baseRate: 6000,
+      adultRate: 800,
+      childRate: 250,
+      infantRate: 100
     }
   ]
 }
@@ -68,6 +71,9 @@ const validDocs = {
     childRate: 300,
     infantRate: 0
   },
+  agency: {
+    name: 'A Valid Boat Company'
+  },
   boat: {
     numberOfBedrooms: 2,
     boatType: 'luxury',
@@ -75,6 +81,14 @@ const validDocs = {
     defaultBaseRate: 9000,
     defaultAdultRate: 1500,
     defaultChildRate: 750
+  },
+  availability: {
+    date: "2024-02-15T18:30:00.000Z",
+    isAvailable: true,
+    baseRate: 12000,
+    adultRate: 700,
+    childRate: 300,
+    infantRate: 0
   }
 }
 
