@@ -4,13 +4,13 @@ const Agency = require('../models/agency')
 const { requiredFeilds } = require('../tests/helper')
 
 boatsRouter.get('/', async (req, res) => {
-  const boats = await Boat.find({})
+  const boats = await Boat.find({}).populate('agency')
   res.json(boats)
 })
 
 boatsRouter.get('/:id', async (req, res) => {
   const id = req.params.id
-  const boat = await Boat.findById(id)
+  const boat = await Boat.findById(id).populate('agency')
   if (boat) {
     res.json(boat)
   } else {
@@ -73,6 +73,7 @@ boatsRouter.put('/:id', async (req, res) => {
     defaultBaseRate, defaultAdultRate, defaultChildRate, defaultInfantRate
   } = body
   for (const field of requiredFeilds.boat) {
+    if (field === 'agency') continue
     // eslint-disable-next-line eqeqeq
     if (body[field] == null) {
       res.status(400).json({ error: `Missing required field: ${field}` })

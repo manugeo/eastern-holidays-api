@@ -5,13 +5,13 @@ const { requiredFeilds } = require('../tests/helper')
 const { isValidDateString } = require('../utils/utils')
 
 availabilitiesRouter.get('/', async (req, res) => {
-  const availabilities = await Availability.find({})
+  const availabilities = await Availability.find({}).populate('boat')
   res.json(availabilities)
 })
 
 availabilitiesRouter.get('/:id', async (req, res) => {
   const id = req.params.id
-  const availability = await Availability.findById(id)
+  const availability = await Availability.findById(id).populate('boat')
   if (availability) {
     res.json(availability)
   } else {
@@ -61,11 +61,14 @@ availabilitiesRouter.post('/', async (req, res) => {
 availabilitiesRouter.put('/:id', async (req, res) => {
   const id = req.params.id
   const { date, isAvailable, baseRate, adultRate, childRate, infantRate } = req.body
-  // eslint-disable-next-line eqeqeq
-  if (!date || (isAvailable == null) || (baseRate == null) || (adultRate == null) || (childRate == null)) {
-    res.status(400).json({ error: 'Missing required fields' })
+  for (const field of requiredFeilds.availability) {
+    if (field === 'boat') continue
+    // eslint-disable-next-line eqeqeq
+    if (req.body[field] == null) {
+      res.status(400).json({ error: `Missing required field: ${field}` })
+    }
   }
-  else if (!isValidDateString(date)) {
+  if (!isValidDateString(date)) {
     res.status(400).json({ error: 'Invalid date format' })
   }
   else if (typeof isAvailable !== 'boolean') {
