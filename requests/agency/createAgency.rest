@@ -2,5 +2,5 @@ POST http://localhost:3001/api/agencies HTTP/1.1
 content-type: application/json
 
 {
-  "name": "Eastern Holidays"
+  "name": "Test Agency 101"
 }
