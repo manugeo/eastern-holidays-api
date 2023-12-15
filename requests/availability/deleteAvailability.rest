@@ -1,1 +1,0 @@
-DELETE http://localhost:3001/api/availabilities/657ab63170440a5c28ecef4d HTTP/1.1
