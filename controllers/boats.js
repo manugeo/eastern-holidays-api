@@ -3,6 +3,7 @@ const Boat = require('../models/boat')
 const Agency = require('../models/agency')
 const { requiredFeilds } = require('../tests/helper')
 const Availability = require('../models/availability')
+const logger = require('../utils/logger')
 
 boatsRouter.get('/', async (req, res) => {
   const boats = await Boat.find({}).populate('agency')
@@ -46,55 +47,57 @@ boatsRouter.post('/', async (req, res) => {
     if (!agencyInDb) {
       res.status(404).json({ error: 'Agency not found' })
     }
-    const boat = new Boat({
-      numberOfBedrooms,
-      boatType,
-      minAdultsRequired,
-      defaultBaseRate,
-      defaultAdultRate,
-      defaultChildRate,
-      defaultInfantRate: defaultInfantRate || 0,
-      agency,
-      // Note: Boats availability is not added from here. It gets added from the 'availability' router.
-      availabilities: []
-    })
-    const savedBoat = await boat.save()
-    if (!savedBoat) {
-      res.status(500).json({ error: 'Internal server error' })
-    }
     else {
-      // Housekeeping!
-      // 1. 'agencyInDb' needs to be updated as well.
-      agencyInDb.boats = [...agencyInDb.boats, savedBoat._id]
-      const savedAgency = await agencyInDb.save()
-      if (!savedAgency) {
+      const boat = new Boat({
+        numberOfBedrooms,
+        boatType,
+        minAdultsRequired,
+        defaultBaseRate,
+        defaultAdultRate,
+        defaultChildRate,
+        defaultInfantRate: defaultInfantRate || 0,
+        agency,
+        // Note: Boats availability is not added from here. It gets added from the 'availability' router.
+        availabilities: []
+      })
+      const savedBoat = await boat.save()
+      if (!savedBoat) {
         res.status(500).json({ error: 'Internal server error' })
       }
+      else {
+        // Housekeeping!
+        // 1. 'agencyInDb' needs to be updated as well.
+        agencyInDb.boats = [...agencyInDb.boats, savedBoat._id]
+        const savedAgency = await agencyInDb.save()
+        if (!savedAgency) {
+          logger.error('Failed to update agency!')
+        }
 
-      // 2. Create boat availability for the next 30 days using the boat id and default rates.
-      const availabilities = []
-      for (let i = 0; i < 30; i++) {
-        const date = new Date()
-        date.setDate(date.getDate() + 1 + i)
-        date.setHours(0, 0, 0, 0)
-        availabilities.push({
-          date,
-          isAvailable: true,
-          baseRate: defaultBaseRate,
-          adultRate: defaultAdultRate,
-          childRate: defaultChildRate,
-          infantRate: defaultInfantRate || 0,
-          boat: savedBoat._id.toString()
-        })
-      }
-      const savedAvailabilities = await Availability.insertMany(availabilities)
-      if (!savedAvailabilities) {
-        res.status(500).json({ error: 'Internal server error' })
-      }
+        // 2. Create boat availability for the next 30 days using the boat id and default rates.
+        const availabilities = []
+        for (let i = 0; i < 30; i++) {
+          const date = new Date()
+          date.setDate(date.getDate() + 1 + i)
+          date.setHours(0, 0, 0, 0)
+          availabilities.push({
+            date,
+            isAvailable: true,
+            baseRate: defaultBaseRate,
+            adultRate: defaultAdultRate,
+            childRate: defaultChildRate,
+            infantRate: defaultInfantRate || 0,
+            boat: savedBoat._id.toString()
+          })
+        }
+        const savedAvailabilities = await Availability.insertMany(availabilities)
+        if (!savedAvailabilities) {
+          logger.error('Failed to create boat availabilities!')
+        }
 
-      savedBoat.agency = savedAgency
-      savedBoat.availabilities = savedAvailabilities
-      res.status(201).json(savedBoat)
+        savedBoat.agency = savedAgency
+        savedBoat.availabilities = savedAvailabilities
+        res.status(201).json(savedBoat)
+      }
     }
   }
 })

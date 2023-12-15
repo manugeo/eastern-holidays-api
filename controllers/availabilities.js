@@ -41,24 +41,28 @@ availabilitiesRouter.post('/', async (req, res) => {
     if (!isBoatIdValid) {
       res.status(400).json({ error: 'Invalid boat id' })
     }
-    const boatInDb = await Boat.findById(boat)
-    if (!boatInDb) {
-      res.status(404).json({ error: 'Boat not found' })
+    else {
+      const boatInDb = await Boat.findById(boat)
+      if (!boatInDb) {
+        res.status(404).json({ error: 'Boat not found' })
+      }
+      else {
+        const availability = new Availability({
+          date: new Date(date).setHours(0, 0, 0, 0),
+          isAvailable,
+          baseRate,
+          adultRate,
+          childRate,
+          infantRate: infantRate || 0,
+          boat
+        })
+        const savedAvailability = await availability.save()
+        // Note: 'boatInDb' needs to be updated as well.
+        boatInDb.availabilities = [...boatInDb.availabilities, savedAvailability._id]
+        await boatInDb.save()
+        res.status(201).json(savedAvailability)
+      }
     }
-    const availability = new Availability({
-      date: new Date(date).setHours(0, 0, 0, 0),
-      isAvailable,
-      baseRate,
-      adultRate,
-      childRate,
-      infantRate: infantRate || 0,
-      boat
-    })
-    const savedAvailability = await availability.save()
-    // Note: 'boatInDb' needs to be updated as well.
-    boatInDb.availabilities = [...boatInDb.availabilities, savedAvailability._id]
-    await boatInDb.save()
-    res.status(201).json(savedAvailability)
   }
 })
 

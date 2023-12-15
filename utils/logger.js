@@ -10,6 +10,7 @@ const error = (...params) => {
   }
 }
 
-module.exports = {
+const logger = {
   info, error
 }
+module.exports = logger
