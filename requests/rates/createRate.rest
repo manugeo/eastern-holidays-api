@@ -1,9 +1,0 @@
-POST http://localhost:3001/api/rates/ HTTP/1.1
-content-type: application/json
-
-{
-    "date": "2023-10-15T09:51:12.325Z",
-    "baseRate": 5000,
-    "adultRate": 345,
-    "childRate": 68
-}
