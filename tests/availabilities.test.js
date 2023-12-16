@@ -42,6 +42,16 @@ test("a specific availability is within the returned availabilities and has boat
   expect(resultAvailability.body.boat).toHaveProperty("numberOfBedrooms")
 })
 
+test('availabilities can be fetched using boat id', async () => {
+  const boatsInDb = await docsInDb(Boat)
+  const boat = boatsInDb[0]
+  const response = await api
+    .get(`/api/availabilities/boat/${boat.id}`)
+    .expect(200)
+    .expect('Content-Type', /application\/json/)
+  expect(response.body[0]).toHaveProperty("boat", boat.id)
+})
+
 test('availabilities are returned as json', async () => {
   await api
     .get('/api/availabilities')
@@ -102,7 +112,7 @@ describe('testing out availability creation using invalid data', () => {
   })
 })
 
-test('a availability can be updated', async () => {
+test('an availability can be updated', async () => {
   const availabilitiesAtStart = await docsInDb(Availability)
   const availabilityToUpdate = availabilitiesAtStart[0]
   const updatedAvailability = { ...availabilityToUpdate, baseRate: 25000 }
@@ -113,7 +123,7 @@ test('a availability can be updated', async () => {
   expect(response.body.baseRate).toBe(25000)
 })
 
-test('a availability can be deleted', async () => {
+test('an availability can be deleted', async () => {
   const availabilitiesAtStart = await docsInDb(Availability)
   const availabilityToDelete = availabilitiesAtStart[0]
   await api
@@ -123,6 +133,16 @@ test('a availability can be deleted', async () => {
   expect(availabilitiesAtEnd).toHaveLength(initialDocs.availabilities.length - 1)
   const availabilityIds = availabilitiesAtEnd.map(a => a.id)
   expect(availabilityIds).not.toContain(availabilityToDelete.id)
+})
+
+test('availabilities can be deleted using boat id', async () => {
+  const boatsInDb = await docsInDb(Boat)
+  const boatToDeleteAvailabilitiesFor = boatsInDb[0]
+  await api
+    .delete(`/api/availabilities/boat/${boatToDeleteAvailabilitiesFor.id}`)
+    .expect(204)
+  const boatAvailabilities = await Availability.find({ boat: boatToDeleteAvailabilitiesFor.id })
+  expect(boatAvailabilities).toHaveLength(0)
 })
 
 afterAll(() => {

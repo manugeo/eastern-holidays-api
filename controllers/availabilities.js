@@ -4,6 +4,7 @@ const Availability = require('../models/availability')
 const Boat = require('../models/boat')
 const { requiredFeilds } = require('../tests/helper')
 const { isValidDateString } = require('../utils/utils')
+const logger = require('../utils/logger')
 
 availabilitiesRouter.get('/', async (req, res) => {
   const availabilities = await Availability.find({}).populate('boat')
@@ -17,6 +18,17 @@ availabilitiesRouter.get('/:id', async (req, res) => {
     res.json(availability)
   } else {
     res.status(404).json({ error: 'Availability not found' })
+  }
+})
+
+availabilitiesRouter.get('/boat/:id', async (req, res) => {
+  const id = req.params.id
+  const availabilities = await Availability.find({ boat: id })
+  if (!availabilities) {
+    res.status(404).json({ error: 'availabilities not found' })
+  }
+  else {
+    res.json(availabilities)
   }
 })
 
@@ -113,6 +125,18 @@ availabilitiesRouter.delete('/:id', async (req, res) => {
   }
   else {
     res.status(404).json({ error: 'Availability not found' })
+  }
+})
+
+availabilitiesRouter.delete('/boat/:id', async (req, res) => {
+  const id = req.params.id
+  const deletedAvailabilities = await Availability.deleteMany({ boat: id })
+  if (!deletedAvailabilities) {
+    logger.error('Failed to delete boat availabilities!')
+    res.status(404).json({ error: 'availabilities not found' })
+  }
+  else {
+    res.status(204).end()
   }
 })
 
