@@ -5,6 +5,7 @@ const api = supertest(app)
 const Boat = require('../models/boat')
 const { initialDocs, validDocs, docsInDb, requiredFeilds } = require('./helper')
 const Agency = require('../models/agency')
+const Availability = require('../models/availability')
 
 beforeEach(async () => {
   await Agency.deleteMany({})
@@ -41,17 +42,18 @@ test('boats are returned as json', async () => {
     .expect('Content-Type', /application\/json/)
 })
 
-test('a valid boat can be added', async () => {
+test('a valid boat can be added and availabilities for the next 30 days are automatically added', async () => {
   const agenciesInDb = await docsInDb(Agency)
   const agency = agenciesInDb[0]
   const boat = { ...validDocs.boat, agency: agency.id }
-  await api
+  const response = await api
     .post('/api/boats')
     .send(boat)
     .expect(201)
     .expect('Content-Type', /application\/json/)
   const boatsAtEnd = await docsInDb(Boat)
   expect(boatsAtEnd).toHaveLength(initialDocs.boats.length + 1)
+  expect(response.body.availabilities).toHaveLength(30)
 })
 
 describe('testing out boat creation using invalid data', () => {
@@ -104,7 +106,7 @@ test('a boat can be updated', async () => {
   expect(response.body.numberOfBedrooms).toBe(5)
 })
 
-test('a boat can be deleted', async () => {
+test('a boat can be deleted and its availabilities will also get deleted', async () => {
   const boatsAtStart = await docsInDb(Boat)
   const boatToDelete = boatsAtStart[0]
   await api
@@ -114,6 +116,9 @@ test('a boat can be deleted', async () => {
   expect(boatsAtEnd).toHaveLength(initialDocs.boats.length - 1)
   const boatIds = boatsAtEnd.map(b => b.id)
   expect(boatIds).not.toContain(boatToDelete.id)
+  // When boat is deleted, availabilities for the boat should also be deleted
+  const deletedBoatAvailabilities = await Availability.find({ boat: boatToDelete.id })
+  expect(deletedBoatAvailabilities).toHaveLength(0)
 })
 
 afterAll(() => {

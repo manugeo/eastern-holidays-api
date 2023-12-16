@@ -151,6 +151,12 @@ boatsRouter.delete('/:id', async (req, res) => {
   const id = req.params.id
   const deletedBoat = await Boat.findByIdAndDelete(id)
   if (deletedBoat) {
+    // Housekeeping!
+    // 1. Delete availabilities for the deleted boat as well.
+    const deletedAvailabilities = await Availability.deleteMany({ boat: id })
+    if (!deletedAvailabilities) {
+      logger.error('Failed to delete boat availabilities!')
+    }
     res.status(204).end()
   }
   else {
