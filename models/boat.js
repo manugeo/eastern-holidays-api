@@ -14,12 +14,7 @@ const boatSchema = new mongoose.Schema({
   boatType: {
     type: String,
     required: true,
-    validate: {
-      validator: function (v) {
-        return ['deluxe', 'premium', 'luxury'].includes(v)
-      },
-      message: 'Boat type must be one of the following: deluxe, premium, luxury',
-    }
+    enum: ['deluxe', 'premium', 'luxury'],
   },
   minAdultsRequired: {
     type: Number,
