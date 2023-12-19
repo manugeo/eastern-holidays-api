@@ -1,26 +1,12 @@
 const initialDocs = {
-  rates: [
-    {
-      date: '2023-09-02T18:30:00.000Z',
-      baseRate: 9000,
-      adultRate: 500,
-      childRate: 300,
-      infantRate: 0
-    },
-    {
-      date: '2022-05-02T18:30:00.000Z',
-      baseRate: 12000,
-      adultRate: 700,
-      childRate: 450,
-      infantRate: 0
-    }
-  ],
   agencies: [
     {
-      name: 'Boat Company'
+      name: 'Boat Company',
+      phone: '1234567890'
     },
     {
-      name: 'Holiday Inn'
+      name: 'Holiday Inn',
+      phone: '0987654321'
     }
   ],
   boats: [
@@ -64,15 +50,9 @@ const initialDocs = {
 }
 
 const validDocs = {
-  rate: {
-    date: '2023-09-02T18:30:00.000Z',
-    baseRate: 9000,
-    adultRate: 500,
-    childRate: 300,
-    infantRate: 0
-  },
   agency: {
-    name: 'A Valid Boat Company'
+    name: 'A Valid Boat Company',
+    phone: '9447888888'
   },
   boat: {
     numberOfBedrooms: 2,
@@ -94,7 +74,7 @@ const validDocs = {
 
 const requiredFeilds = {
   rate: ['date', 'baseRate', 'adultRate', 'childRate', 'infantRate'],
-  agency: ['name'],
+  agency: ['name', 'phone'],
   boat: ['numberOfBedrooms', 'boatType', 'minAdultsRequired', 'defaultBaseRate', 'defaultAdultRate', 'defaultChildRate', 'agency'],
   availability: ['date', 'isAvailable', 'baseRate', 'adultRate', 'childRate', 'boat']
 }

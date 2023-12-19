@@ -39,7 +39,7 @@ availabilitiesRouter.post('/', async (req, res) => {
   for (const field of requiredFeilds.availability) {
     // eslint-disable-next-line eqeqeq
     if (body[field] == null) {
-      res.status(400).json({ error: `Missing required field: ${field}` })
+      return res.status(400).json({ error: `Missing required field: ${field}` })
     }
   }
   if (!isValidDateString(date)) {
@@ -85,7 +85,7 @@ availabilitiesRouter.put('/:id', async (req, res) => {
     if (field === 'boat') continue
     // eslint-disable-next-line eqeqeq
     if (req.body[field] == null) {
-      res.status(400).json({ error: `Missing required field: ${field}` })
+      return res.status(400).json({ error: `Missing required field: ${field}` })
     }
   }
   if (!isValidDateString(date)) {

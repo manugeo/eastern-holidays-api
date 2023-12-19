@@ -52,6 +52,12 @@ describe('testing out agency creation using invalid data', () => {
     expect(response.status).toBe(400)
     expect(response.body.error).toContain(`Missing required field: ${field}`)
   })
+  test('fails with correct message when phone number is not 10 digits', async () => {
+    const agency = { ...validDocs.agency, phone: '+91-9946994959' }
+    const response = await api.post('/api/agencies').send(agency)
+    expect(response.status).toBe(400)
+    expect(response.body.error).toContain('Invalid phone number. Should be a 10-digit number')
+  })
 })
 
 test('an agency can be updated', async () => {
@@ -79,6 +85,7 @@ test('an agency can be deleted', async () => {
   expect(agenciesAtEnd).toHaveLength(initialDocs.agencies.length - 1)
   const agencyIds = agenciesAtEnd.map(a => a.id)
   expect(agencyIds).not.toContain(agencyToDelete.id)
+  // Todo: Make sure all agency boats and their availabilities are deleted.
 })
 
 afterAll(async () => {

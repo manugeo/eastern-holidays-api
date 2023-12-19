@@ -1,7 +1,21 @@
 const mongoose = require('../db')
+const uniqueValidator = require('mongoose-unique-validator')
 
 const agencySchema = new mongoose.Schema({
-  name: String,
+  name: {
+    type: String,
+    required: true,
+    minLength: 2,
+    maxLength: 25
+  },
+  phone: {
+    type: String,
+    required: true,
+    unique: true,
+    minLength: 10,
+    maxLength: 10,
+    match: /^\d{10}$/
+  },
   boats: [
     {
       type: mongoose.Schema.Types.ObjectId,
@@ -9,6 +23,8 @@ const agencySchema = new mongoose.Schema({
     }
   ]
 })
+
+agencySchema.plugin(uniqueValidator)
 
 agencySchema.set('toJSON', {
   transform: (document, returnedObject) => {
