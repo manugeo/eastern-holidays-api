@@ -30,7 +30,7 @@ boatsRouter.post('/', async (req, res) => {
   for (const field of requiredFeilds.boat) {
     // eslint-disable-next-line eqeqeq
     if (body[field] == null) {
-      res.status(400).json({ error: `Missing required field: ${field}` })
+      return res.status(400).json({ error: `Missing required field: ${field}` })
     }
   }
   if (numberOfBedrooms < 0 || numberOfBedrooms > 10) {
@@ -90,12 +90,20 @@ boatsRouter.post('/', async (req, res) => {
           })
         }
         const savedAvailabilities = await Availability.insertMany(availabilities)
-        if (!savedAvailabilities) {
+        if (!savedAvailabilities || (savedAvailabilities.length !== availabilities.length)) {
           logger.error('Failed to create boat availabilities!')
         }
 
-        savedBoat.agency = savedAgency
-        savedBoat.availabilities = savedAvailabilities
+        // 3. Update the saved boat availabilities array with the newly created availabilities.
+        const savedAvailabilitiesIds = savedAvailabilities.map(availability => availability._id)
+        savedBoat.availabilities = savedAvailabilitiesIds
+        const updatedBoat = await savedBoat.save()
+        if (!updatedBoat) {
+          logger.error('Failed to update boat with new availabilities!')
+        }
+
+        updatedBoat.agency = savedAgency
+        updatedBoat.availabilities = savedAvailabilities
         res.status(201).json(savedBoat)
       }
     }
@@ -113,7 +121,7 @@ boatsRouter.put('/:id', async (req, res) => {
     if (field === 'agency') continue
     // eslint-disable-next-line eqeqeq
     if (body[field] == null) {
-      res.status(400).json({ error: `Missing required field: ${field}` })
+      return res.status(400).json({ error: `Missing required field: ${field}` })
     }
   }
   if (numberOfBedrooms < 0 || numberOfBedrooms > 10) {
