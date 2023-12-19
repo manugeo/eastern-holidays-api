@@ -4,6 +4,8 @@ const app = require('../app')
 const api = supertest(app)
 const Agency = require("../models/agency")
 const { initialDocs, docsInDb, validDocs, requiredFeilds } = require("./helper")
+const Boat = require('../models/boat')
+const Availability = require('../models/availability')
 
 beforeEach( async () => {
   await Agency.deleteMany({})
@@ -75,7 +77,7 @@ test('an agency can be updated', async () => {
   expect(updatedAgency.name).toBe(agency.name)
 })
 
-test('an agency can be deleted', async () => {
+test('an agency can be deleted and its boats and availabilities will also get deleted', async () => {
   const agenciesAtStart = await docsInDb(Agency)
   const agencyToDelete = agenciesAtStart[0]
   await api
@@ -86,6 +88,11 @@ test('an agency can be deleted', async () => {
   const agencyIds = agenciesAtEnd.map(a => a.id)
   expect(agencyIds).not.toContain(agencyToDelete.id)
   // Todo: Make sure all agency boats and their availabilities are deleted.
+  const deletedAgencyBoatIds = agencyToDelete.boats
+  const deletedAgencyBoats = await Boat.find({ _id: { $in: deletedAgencyBoatIds } })
+  expect(deletedAgencyBoats).toHaveLength(0)
+  const deletedAgencyBoatAvailabilities = await Availability.find({ boat: { $in: deletedAgencyBoatIds } })
+  expect(deletedAgencyBoatAvailabilities).toHaveLength(0)
 })
 
 afterAll(async () => {
