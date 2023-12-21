@@ -6,13 +6,13 @@ const { requiredFeilds } = require('../tests/helper')
 const logger = require('../utils/logger')
 
 agenciesRouter.get('/', async (req, res) => {
-  const agencies = await Agency.find({}).populate('boats')
+  const agencies = await Agency.find({})
   res.json(agencies)
 })
 
 agenciesRouter.get('/:id', async (req, res) => {
   const id = req.params.id
-  const agency = await Agency.findById(id).populate('boats')
+  const agency = await Agency.findById(id)
   if (agency) {
     res.json(agency)
   } else {

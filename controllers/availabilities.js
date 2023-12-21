@@ -7,13 +7,13 @@ const { isValidDateString } = require('../utils/utils')
 const logger = require('../utils/logger')
 
 availabilitiesRouter.get('/', async (req, res) => {
-  const availabilities = await Availability.find({}).populate('boat')
+  const availabilities = await Availability.find({})
   res.json(availabilities)
 })
 
 availabilitiesRouter.get('/:id', async (req, res) => {
   const id = req.params.id
-  const availability = await Availability.findById(id).populate('boat')
+  const availability = await Availability.findById(id)
   if (availability) {
     res.json(availability)
   } else {

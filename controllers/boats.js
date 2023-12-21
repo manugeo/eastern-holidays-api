@@ -6,13 +6,13 @@ const Availability = require('../models/availability')
 const logger = require('../utils/logger')
 
 boatsRouter.get('/', async (req, res) => {
-  const boats = await Boat.find({}).populate('agency')
+  const boats = await Boat.find({})
   res.json(boats)
 })
 
 boatsRouter.get('/:id', async (req, res) => {
   const id = req.params.id
-  const boat = await Boat.findById(id).populate('agency')
+  const boat = await Boat.findById(id)
   if (boat) {
     res.json(boat)
   } else {
