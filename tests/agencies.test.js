@@ -8,6 +8,7 @@ const Boat = require('../models/boat')
 const Availability = require('../models/availability')
 
 beforeEach( async () => {
+  // Todo: Create agency, boat and its availabilities.
   await Agency.deleteMany({})
   for (let agency of initialDocs.agencies) {
     let agencyObject = new Agency(agency)
