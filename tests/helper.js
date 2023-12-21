@@ -75,7 +75,7 @@ const validDocs = {
 const requiredFeilds = {
   rate: ['date', 'baseRate', 'adultRate', 'childRate', 'infantRate'],
   agency: ['name', 'phone'],
-  boat: ['numberOfBedrooms', 'boatType', 'minAdultsRequired', 'defaultBaseRate', 'defaultAdultRate', 'defaultChildRate', 'agency'],
+  boat: ['numberOfBedrooms', 'boatType', 'minAdultsRequired', 'defaultBaseRate', 'defaultAdultRate', 'defaultChildRate', 'agencyId'],
   availability: ['date', 'isAvailable', 'baseRate', 'adultRate', 'childRate', 'boat']
 }
 

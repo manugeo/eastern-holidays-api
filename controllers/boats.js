@@ -25,7 +25,7 @@ boatsRouter.post('/', async (req, res) => {
   const {
     numberOfBedrooms, boatType, minAdultsRequired,
     defaultBaseRate, defaultAdultRate, defaultChildRate, defaultInfantRate,
-    agency
+    agencyId
   } = body
   for (const field of requiredFeilds.boat) {
     // eslint-disable-next-line eqeqeq
@@ -43,7 +43,7 @@ boatsRouter.post('/', async (req, res) => {
     res.status(400).json({ error: 'Minimum number of adults required must be greater than 0' })
   }
   else {
-    const agencyInDb = await Agency.findById(agency)
+    const agencyInDb = await Agency.findById(agencyId)
     if (!agencyInDb) {
       res.status(404).json({ error: 'Agency not found' })
     }
@@ -56,7 +56,7 @@ boatsRouter.post('/', async (req, res) => {
         defaultAdultRate,
         defaultChildRate,
         defaultInfantRate: defaultInfantRate || 0,
-        agency,
+        agencyId,
         // Note: Boats availability is not added from here. It gets added from the 'availability' router.
         availabilities: []
       })
@@ -67,10 +67,10 @@ boatsRouter.post('/', async (req, res) => {
       else {
         // Housekeeping!
         // 1. 'agencyInDb' needs to be updated as well.
-        agencyInDb.boats = [...agencyInDb.boats, savedBoat._id]
+        agencyInDb.boatIds = [...agencyInDb.boatIds, savedBoat._id]
         const savedAgency = await agencyInDb.save()
         if (!savedAgency) {
-          logger.error('Failed to update agency!')
+          logger.error('Failed to update agency while creating boat!')
         }
 
         // 2. Create boat availability for the next 30 days using the boat id and default rates.
@@ -118,7 +118,7 @@ boatsRouter.put('/:id', async (req, res) => {
     defaultBaseRate, defaultAdultRate, defaultChildRate, defaultInfantRate
   } = body
   for (const field of requiredFeilds.boat) {
-    if (field === 'agency') continue
+    if (field === 'agencyId') continue
     // eslint-disable-next-line eqeqeq
     if (body[field] == null) {
       return res.status(400).json({ error: `Missing required field: ${field}` })
@@ -142,7 +142,7 @@ boatsRouter.put('/:id', async (req, res) => {
       defaultAdultRate,
       defaultChildRate,
       defaultInfantRate: defaultInfantRate || 0,
-      // Note: 'agency' is prop cannot be updated after creation.
+      // Note: 'agencyId' prop cannot be updated after creation.
       // Note: Boats availability is not updated from here. It gets updated from the 'availability' router.
     }
     const updatedBoat = await Boat.findByIdAndUpdate(id, boat, { new: true, runValidators: true, context: 'query' })

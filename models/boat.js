@@ -42,7 +42,7 @@ const boatSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  agency: {
+  agencyId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Agency',
     required: true,

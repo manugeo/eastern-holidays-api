@@ -1,7 +1,7 @@
 const mongoose = require('../db')
 const uniqueValidator = require('mongoose-unique-validator')
 
-const agencySchema = new mongoose.Schema({
+const AgencySchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
@@ -16,7 +16,7 @@ const agencySchema = new mongoose.Schema({
     maxLength: 10,
     match: /^\d{10}$/
   },
-  boats: [
+  boatIds: [
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Boat'
@@ -24,15 +24,22 @@ const agencySchema = new mongoose.Schema({
   ]
 })
 
-agencySchema.plugin(uniqueValidator)
+AgencySchema.virtual('boats', {
+  ref: 'Boat',
+  localField: '_id',
+  foreignField: 'agencyId'
+})
 
-agencySchema.set('toJSON', {
+AgencySchema.plugin(uniqueValidator)
+
+AgencySchema.set('toJSON', {
   transform: (document, returnedObject) => {
     returnedObject.id = returnedObject._id.toString()
     delete returnedObject._id
     delete returnedObject.__v
-  }
+  },
+  virtuals: true
 })
 
-const Agency = mongoose.model('Agency', agencySchema)
+const Agency = mongoose.model('Agency', AgencySchema)
 module.exports = Agency
