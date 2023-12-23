@@ -6,13 +6,13 @@ const Availability = require('../models/availability')
 const logger = require('../utils/logger')
 
 boatsRouter.get('/', async (req, res) => {
-  const boats = await Boat.find({})
+  const boats = await Boat.find({}).populate('agency')
   res.json(boats)
 })
 
 boatsRouter.get('/:id', async (req, res) => {
   const id = req.params.id
-  const boat = await Boat.findById(id)
+  const boat = await Boat.findById(id).populate('agency')
   if (boat) {
     res.json(boat)
   } else {
@@ -117,8 +117,9 @@ boatsRouter.put('/:id', async (req, res) => {
     numberOfBedrooms, boatType, minAdultsRequired,
     defaultBaseRate, defaultAdultRate, defaultChildRate, defaultInfantRate
   } = body
+  // Todo: Update only the fields supplied. Take rest from the original doc.
   for (const field of requiredFeilds.boat) {
-    if (field === 'agencyId') continue
+    if (field === 'agencyId') continue //Since 'agencyId' prop cannot be updated after creation.
     // eslint-disable-next-line eqeqeq
     if (body[field] == null) {
       return res.status(400).json({ error: `Missing required field: ${field}` })
@@ -150,6 +151,7 @@ boatsRouter.put('/:id', async (req, res) => {
       res.status(404).json({ error: 'Boat not found' })
     }
     else {
+      // Todo: Return boat with 'agency' and 'availabilities' populated (manually).
       res.json(updatedBoat)
     }
   }

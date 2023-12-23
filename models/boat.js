@@ -1,6 +1,6 @@
 const mongoose = require('../db')
 
-const boatSchema = new mongoose.Schema({
+const BoatSchema = new mongoose.Schema({
   numberOfBedrooms: {
     type: Number,
     required: true,
@@ -55,13 +55,21 @@ const boatSchema = new mongoose.Schema({
   ],
 })
 
-boatSchema.set('toJSON', {
+BoatSchema.virtual('agency', {
+  ref: 'Agency',
+  localField: 'agencyId',
+  foreignField: '_id',
+  justOne: true,
+})
+
+BoatSchema.set('toJSON', {
   transform: (document, returnedObject) => {
     returnedObject.id = returnedObject._id.toString()
     delete returnedObject._id
     delete returnedObject.__v
   },
+  virtuals: true,
 })
 
-const Boat = mongoose.model('Boat', boatSchema)
+const Boat = mongoose.model('Boat', BoatSchema)
 module.exports = Boat
