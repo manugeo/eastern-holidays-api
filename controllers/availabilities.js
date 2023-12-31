@@ -6,6 +6,7 @@ const { requiredFeilds } = require('../tests/helper')
 const { isValidDateString } = require('../utils/utils')
 const logger = require('../utils/logger')
 
+// Todo: Populate boat
 availabilitiesRouter.get('/', async (req, res) => {
   const availabilities = await Availability.find({})
   res.json(availabilities)
@@ -22,8 +23,8 @@ availabilitiesRouter.get('/:id', async (req, res) => {
 })
 
 availabilitiesRouter.get('/boat/:id', async (req, res) => {
-  const id = req.params.id
-  const availabilities = await Availability.find({ boat: id })
+  const boatId = req.params.id
+  const availabilities = await Availability.find({ boatId })
   if (!availabilities) {
     res.status(404).json({ error: 'availabilities not found' })
   }
@@ -32,10 +33,9 @@ availabilitiesRouter.get('/boat/:id', async (req, res) => {
   }
 })
 
-// Todo: Handle new boat property. Make sure to update the corresponding boat object as well.
 availabilitiesRouter.post('/', async (req, res) => {
   const body = req.body
-  const { date, isAvailable, baseRate, adultRate, childRate, infantRate, boat } = body
+  const { date, isAvailable, baseRate, adultRate, childRate, infantRate, boatId } = body
   for (const field of requiredFeilds.availability) {
     // eslint-disable-next-line eqeqeq
     if (body[field] == null) {
@@ -49,12 +49,12 @@ availabilitiesRouter.post('/', async (req, res) => {
     res.status(400).json({ error: 'isAvailable must be a boolean' })
   }
   else {
-    const isBoatIdValid = mongoose.Types.ObjectId.isValid(boat)
+    const isBoatIdValid = mongoose.Types.ObjectId.isValid(boatId)
     if (!isBoatIdValid) {
-      res.status(400).json({ error: 'Invalid boat id' })
+      res.status(400).json({ error: 'Invalid boatId' })
     }
     else {
-      const boatInDb = await Boat.findById(boat)
+      const boatInDb = await Boat.findById(boatId)
       if (!boatInDb) {
         res.status(404).json({ error: 'Boat not found' })
       }
@@ -66,13 +66,21 @@ availabilitiesRouter.post('/', async (req, res) => {
           adultRate,
           childRate,
           infantRate: infantRate || 0,
-          boat
+          boatId
         })
         const savedAvailability = await availability.save()
-        // Note: 'boatInDb' needs to be updated as well.
-        boatInDb.availabilities = [...boatInDb.availabilities, savedAvailability._id]
-        await boatInDb.save()
-        res.status(201).json(savedAvailability)
+        if (!savedAvailability) {
+          logger.error('Failed to create availability!')
+          res.status(500).json({ error: 'Failed to create availability' })
+        }
+        else {
+          // Housekeeping!
+          // 1. Update boat's availabilityIds
+          boatInDb.availabilityIds = [...boatInDb.availabilityIds, savedAvailability._id]
+          await boatInDb.save()
+
+          res.status(201).json(savedAvailability)
+        }
       }
     }
   }
@@ -81,8 +89,9 @@ availabilitiesRouter.post('/', async (req, res) => {
 availabilitiesRouter.put('/:id', async (req, res) => {
   const id = req.params.id
   const { date, isAvailable, baseRate, adultRate, childRate, infantRate } = req.body
+  // Todo: Update only the fields supplied. Take rest from the original doc.
   for (const field of requiredFeilds.availability) {
-    if (field === 'boat') continue
+    if (field === 'boatId') continue //Since 'boatId' prop cannot be updated after creation.
     // eslint-disable-next-line eqeqeq
     if (req.body[field] == null) {
       return res.status(400).json({ error: `Missing required field: ${field}` })
@@ -102,13 +111,14 @@ availabilitiesRouter.put('/:id', async (req, res) => {
       adultRate: adultRate,
       childRate: childRate,
       infantRate: infantRate || 0,
-      // Note: An availabiliy's boat cannot be changed.
+      // Note: An availabiliy's boatId cannot be changed.
     }
     const updatedAvailability = await Availability.findByIdAndUpdate(id, availability, { new: true, runValidators: true, context: 'query' })
     if (!updatedAvailability) {
       res.status(404).json({ error: 'Availability not found' })
     }
     else {
+      // Todo: Return availability with 'boat' populated(manually).
       res.json(updatedAvailability)
     }
   }
@@ -121,6 +131,18 @@ availabilitiesRouter.delete('/:id', async (req, res) => {
   // No 'findByIdAndRemove' method is present here.
   const deletedAvailability = await Availability.findByIdAndDelete(id)
   if (deletedAvailability) {
+    // Housekeeping!
+    // 1. Update boat's availabilityIds
+    const boatId = deletedAvailability.boatId
+    const boatInDb = await Boat.findById(boatId)
+    if (!boatInDb) {
+      logger.error(`Failed to update boat's availabilityIds. Boat not found: ${boatId}`)
+    }
+    else {
+      boatInDb.availabilityIds = boatInDb.availabilityIds.filter(id => id.toString() !== deletedAvailability._id.toString())
+      await boatInDb.save()
+    }
+
     res.status(204).end()
   }
   else {
@@ -130,12 +152,22 @@ availabilitiesRouter.delete('/:id', async (req, res) => {
 
 availabilitiesRouter.delete('/boat/:id', async (req, res) => {
   const id = req.params.id
-  const deletedAvailabilities = await Availability.deleteMany({ boat: id })
+  const deletedAvailabilities = await Availability.deleteMany({ boatId: id })
   if (!deletedAvailabilities) {
-    logger.error('Failed to delete boat availabilities!')
+    logger.error(`Failed to delete availabilities for boat: ${id}`)
     res.status(404).json({ error: 'availabilities not found' })
   }
   else {
+    // Housekeeping!
+    // 1. Update boat's availabilityIds
+    const boatInDb = await Boat.findById(id)
+    if (!boatInDb) {
+      logger.error(`Failed to update boat's availabilityIds. Boat not found: ${id}`)
+    }
+    else {
+      boatInDb.availabilityIds = []
+      await boatInDb.save()
+    }
     res.status(204).end()
   }
 })

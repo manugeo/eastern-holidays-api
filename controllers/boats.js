@@ -5,11 +5,13 @@ const { requiredFeilds } = require('../tests/helper')
 const Availability = require('../models/availability')
 const logger = require('../utils/logger')
 
+// Todo: Populate availabilities ?
 boatsRouter.get('/', async (req, res) => {
   const boats = await Boat.find({}).populate('agency')
   res.json(boats)
 })
 
+// Todo: Populate availabilities ?
 boatsRouter.get('/:id', async (req, res) => {
   const id = req.params.id
   const boat = await Boat.findById(id).populate('agency')
@@ -57,8 +59,7 @@ boatsRouter.post('/', async (req, res) => {
         defaultChildRate,
         defaultInfantRate: defaultInfantRate || 0,
         agencyId,
-        // Note: Boats availability is not added from here. It gets added from the 'availability' router.
-        availabilities: []
+        availabilityIds: []
       })
       const savedBoat = await boat.save()
       if (!savedBoat) {
@@ -86,20 +87,20 @@ boatsRouter.post('/', async (req, res) => {
             adultRate: defaultAdultRate,
             childRate: defaultChildRate,
             infantRate: defaultInfantRate || 0,
-            boat: savedBoat._id.toString()
+            boatId: savedBoat._id.toString()
           })
         }
         const savedAvailabilities = await Availability.insertMany(availabilities)
         if (!savedAvailabilities || (savedAvailabilities.length !== availabilities.length)) {
-          logger.error('Failed to create boat availabilities!')
+          logger.error('Failed to create boat availabilities after boat creation!')
         }
 
-        // 3. Update the saved boat availabilities array with the newly created availabilities.
+        // 3. Update the saved boat availabilityIds array with the newly created availabilities ids.
         const savedAvailabilitiesIds = savedAvailabilities.map(availability => availability._id)
-        savedBoat.availabilities = savedAvailabilitiesIds
+        savedBoat.availabilityIds = savedAvailabilitiesIds
         const updatedBoat = await savedBoat.save()
         if (!updatedBoat) {
-          logger.error('Failed to update boat with new availabilities!')
+          logger.error('Failed to update boat with automatically created new availabilities!')
         }
 
         updatedBoat.agency = savedAgency
@@ -162,11 +163,25 @@ boatsRouter.delete('/:id', async (req, res) => {
   const deletedBoat = await Boat.findByIdAndDelete(id)
   if (deletedBoat) {
     // Housekeeping!
-    // 1. Delete availabilities for the deleted boat as well.
-    const deletedAvailabilities = await Availability.deleteMany({ boat: id })
-    if (!deletedAvailabilities) {
-      logger.error('Failed to delete boat availabilities!')
+
+    // 1. Update agency's boatIds
+    const agencyInDb = await Agency.findById(deletedBoat.agencyId)
+    if (!agencyInDb) {
+      logger.error('Failed to update agency boatIds after deleting boat!')
     }
+    else {
+      agencyInDb.boatIds = agencyInDb.boatIds.filter(boatId => boatId.toString() !== id)
+      const updatedAgency = await agencyInDb.save()
+      if (!updatedAgency) {
+        logger.error('Failed to update agency boatIds after deleting boat!')
+      }
+    }
+    // 2. Delete availabilities for the deleted boat as well.
+    const deletedAvailabilities = await Availability.deleteMany({ boatId: id })
+    if (!deletedAvailabilities) {
+      logger.error('Failed to delete boat availabilities after deleting boat!')
+    }
+
     res.status(204).end()
   }
   else {

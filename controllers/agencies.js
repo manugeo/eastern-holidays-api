@@ -71,11 +71,11 @@ agenciesRouter.delete('/:id', async (req, res) => {
     for (const boatId of deletedAgency.boatIds) {
       const deletedBoat = await Boat.findByIdAndDelete(boatId)
       if (!deletedBoat) {
-        logger.error('Failed to delete boat!')
+        logger.error('Failed to delete boat after deleting agency!')
       }
-      const deletedAvailabilities = await Availability.deleteMany({ boat: boatId })
+      const deletedAvailabilities = await Availability.deleteMany({ boatId })
       if (!deletedAvailabilities) {
-        logger.error('Failed to delete boat availabilities!')
+        logger.error('Failed to delete boat availabilities after deleting agency!')
       }
     }
     res.status(204).end()

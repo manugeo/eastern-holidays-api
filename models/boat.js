@@ -47,7 +47,7 @@ const BoatSchema = new mongoose.Schema({
     ref: 'Agency',
     required: true,
   },
-  availabilities: [
+  availabilityIds: [
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Availability',
@@ -60,6 +60,12 @@ BoatSchema.virtual('agency', {
   localField: 'agencyId',
   foreignField: '_id',
   justOne: true,
+})
+BoatSchema.virtual('availabilities', {
+  ref: 'Availability',
+  localField: '_id',
+  foreignField: 'boatId',
+  justOne: false,
 })
 
 BoatSchema.set('toJSON', {

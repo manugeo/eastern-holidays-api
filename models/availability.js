@@ -1,6 +1,6 @@
 const mongoose = require('../db')
 
-const availabilitySchema = new mongoose.Schema({
+const AvailabilitySchema = new mongoose.Schema({
   date: {
     type: Date,
     required: true,
@@ -31,21 +31,29 @@ const availabilitySchema = new mongoose.Schema({
     type: Number,
     required: true
   },
-  boat: {
+  boatId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Boat',
     required: true
   }
 })
 
-availabilitySchema.set('toJSON', {
+AvailabilitySchema.virtual('boat', {
+  ref: 'Boat',
+  localField: 'boatId',
+  foreignField: '_id',
+  justOne: true
+})
+
+AvailabilitySchema.set('toJSON', {
   transform: (document, returnedObject) => {
     returnedObject.id = returnedObject._id.toString()
     returnedObject.date = returnedObject.date.toISOString()
     delete returnedObject._id
     delete returnedObject.__v
-  }
+  },
+  virtuals: true
 })
 
-const Availability = mongoose.model('Availability', availabilitySchema)
+const Availability = mongoose.model('Availability', AvailabilitySchema)
 module.exports = Availability
