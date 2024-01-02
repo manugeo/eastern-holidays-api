@@ -4,6 +4,7 @@ const Agency = require('../models/agency')
 const { requiredFeilds } = require('../tests/helper')
 const Availability = require('../models/availability')
 const logger = require('../utils/logger')
+const { ALL_FIELDS } = require('../utils/config')
 
 boatsRouter.get('/', async (req, res) => {
   const boats = await Boat.find({}).populate('agency')
@@ -112,47 +113,42 @@ boatsRouter.post('/', async (req, res) => {
 boatsRouter.put('/:id', async (req, res) => {
   const id = req.params.id
   const body = req.body
-  const {
-    numberOfBedrooms, boatType, minAdultsRequired,
-    defaultBaseRate, defaultAdultRate, defaultChildRate, defaultInfantRate
-  } = body
-  // Todo: Update only the fields supplied. Take rest from the original doc.
-  for (const field of requiredFeilds.boat) {
-    if (field === 'agencyId') continue //Since 'agencyId' prop cannot be updated after creation.
+  const boatToBeUpdated = await Boat.findById(id).populate('agency').populate('availabilities')
+  if (!boatToBeUpdated) {
+    return res.status(404).json({ error: 'Boat not found' })
+  }
+
+  // Todo: Instead of using the 'ALL_FIELDS' from the config, dynamically get all fields from the model.
+  for (const field of ALL_FIELDS.boat) {
+    if (field === 'agencyId') continue // Since 'agencyId' prop cannot be updated after creation.
+    if (field === 'availabilityIds') continue // Since 'availabilityIds' is not updated from here. It gets updated from the 'availability' router.
     // eslint-disable-next-line eqeqeq
-    if (body[field] == null) {
-      return res.status(400).json({ error: `Missing required field: ${field}` })
+    if (body[field] == null) continue
+
+    if (field === 'numberOfBedrooms') {
+      if (body[field] < 0 || body[field] > 10) {
+        return res.status(400).json({ error: 'Number of bedrooms must be between 0 and 10' })
+      }
     }
+    if (field === 'boatType') {
+      if (!['deluxe', 'premium', 'luxury'].includes(body[field])) {
+        return res.status(400).json({ error: 'Boat type must be one of the following: deluxe, premium, luxury' })
+      }
+    }
+    if (field === 'minAdultsRequired') {
+      if (body[field] <= 0) {
+        return res.status(400).json({ error: 'Minimum number of adults required must be greater than 0' })
+      }
+    }
+    boatToBeUpdated[field] = body[field]
   }
-  if (numberOfBedrooms < 0 || numberOfBedrooms > 10) {
-    res.status(400).json({ error: 'Number of bedrooms must be between 0 and 10' })
-  }
-  else if (!['deluxe', 'premium', 'luxury'].includes(boatType)) {
-    res.status(400).json({ error: 'Boat type must be one of the following: deluxe, premium, luxury' })
-  }
-  else if (minAdultsRequired <= 0) {
-    res.status(400).json({ error: 'Minimum number of adults required must be greater than 0' })
+  const updatedBoat = await boatToBeUpdated.save()
+  if (!updatedBoat) {
+    logger.error(`Failed to update boat. id: ${id}, body: ${JSON.stringify(body)}`)
+    return res.status(500).json({ error: 'Internal server error' })
   }
   else {
-    const boat = {
-      numberOfBedrooms,
-      boatType,
-      minAdultsRequired,
-      defaultBaseRate,
-      defaultAdultRate,
-      defaultChildRate,
-      defaultInfantRate: defaultInfantRate || 0,
-      // Note: 'agencyId' prop cannot be updated after creation.
-      // Note: Boats availability is not updated from here. It gets updated from the 'availability' router.
-    }
-    const updatedBoat = await Boat.findByIdAndUpdate(id, boat, { new: true, runValidators: true, context: 'query' })
-    if (!updatedBoat) {
-      res.status(404).json({ error: 'Boat not found' })
-    }
-    else {
-      // Todo: Return boat with 'agency' and 'availabilities' populated (manually).
-      res.json(updatedBoat)
-    }
+    return res.status(200).json(updatedBoat)
   }
 })
 

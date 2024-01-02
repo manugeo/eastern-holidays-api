@@ -5,8 +5,8 @@ const Boat = require('../models/boat')
 const { requiredFeilds } = require('../tests/helper')
 const { isValidDateString } = require('../utils/utils')
 const logger = require('../utils/logger')
+const { ALL_FIELDS } = require('../utils/config')
 
-// Note: Not populating 'boat' property here.
 availabilitiesRouter.get('/', async (req, res) => {
   const availabilities = await Availability.find({})
   res.json(availabilities)
@@ -79,10 +79,10 @@ availabilitiesRouter.post('/', async (req, res) => {
           boatInDb.availabilityIds = [...boatInDb.availabilityIds, savedAvailability._id]
           const savedBoat = await boatInDb.save()
           if (!savedBoat) {
-            logger.error(`Failed to update boat with automatically created new availability. Boat id: ${boatId}`)
+            logger.error(`Failed to update boat with newly created availability. Boat id: ${boatId}, availability id: ${savedAvailability._id}`)
           }
 
-          // Todo: Return availability with 'boat' populated(manually).
+          savedAvailability.boat = savedBoat
           res.status(201).json(savedAvailability)
         }
       }
@@ -92,39 +92,40 @@ availabilitiesRouter.post('/', async (req, res) => {
 
 availabilitiesRouter.put('/:id', async (req, res) => {
   const id = req.params.id
-  const { date, isAvailable, baseRate, adultRate, childRate, infantRate } = req.body
-  // Todo: Update only the fields supplied. Take rest from the original doc.
-  for (const field of requiredFeilds.availability) {
-    if (field === 'boatId') continue //Since 'boatId' prop cannot be updated after creation.
+  const body = req.body
+  const availabilityToBeUpdated = await Availability.findById(id).populate('boat')
+  if (!availabilityToBeUpdated) {
+    res.status(404).json({ error: 'Availability not found' })
+    return
+  }
+  // Todo: Instead of using the 'ALL_FIELDS' from the config, dynamically get all fields from the model.
+  // Eg: const allAvailabilityFields = Availability.schema.paths
+
+  for (const field of ALL_FIELDS.availability) {
+    if (field === 'date') continue  // Note: For now disabling update of availability's date.
+    if (field === 'boatId') continue // Note: An availabiliy's boatId cannot be changed.
     // eslint-disable-next-line eqeqeq
-    if (req.body[field] == null) {
-      return res.status(400).json({ error: `Missing required field: ${field}` })
+    if (body[field] == null) continue
+    if (field === 'date') {
+      if (!isValidDateString(body[field])) {
+        return res.status(400).json({ error: 'Invalid date format' })
+      }
     }
+    if (field === 'isAvailable') {
+      if (typeof body[field] !== 'boolean') {
+        return res.status(400).json({ error: 'isAvailable must be a boolean' })
+      }
+    }
+    availabilityToBeUpdated[field] = body[field]
   }
-  if (!isValidDateString(date)) {
-    res.status(400).json({ error: 'Invalid date format' })
-  }
-  else if (typeof isAvailable !== 'boolean') {
-    res.status(400).json({ error: 'isAvailable must be a boolean' })
+
+  const updatedAvailability = await availabilityToBeUpdated.save()
+  if (!updatedAvailability) {
+    logger.error(`Failed to update availability. id: ${id}, body: ${JSON.stringify(body)}`)
+    return res.status(500).json({ error: 'Failed to update availability' })
   }
   else {
-    const availability = {
-      date: new Date(date).setHours(0, 0, 0, 0),
-      isAvailable: isAvailable,
-      baseRate: baseRate,
-      adultRate: adultRate,
-      childRate: childRate,
-      infantRate: infantRate || 0,
-      // Note: An availabiliy's boatId cannot be changed.
-    }
-    const updatedAvailability = await Availability.findByIdAndUpdate(id, availability, { new: true, runValidators: true, context: 'query' })
-    if (!updatedAvailability) {
-      res.status(404).json({ error: 'Availability not found' })
-    }
-    else {
-      // Todo: Return availability with 'boat' populated(manually).
-      res.json(updatedAvailability)
-    }
+    return res.json(updatedAvailability)
   }
 })
 

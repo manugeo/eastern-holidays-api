@@ -127,7 +127,6 @@ const validDocs = {
 
 // Todo: Move requiredFeilds away from test helper.js (to config?)
 const requiredFeilds = {
-  rate: ['date', 'baseRate', 'adultRate', 'childRate', 'infantRate'],
   agency: ['name', 'phone'],
   boat: ['numberOfBedrooms', 'boatType', 'minAdultsRequired', 'defaultBaseRate', 'defaultAdultRate', 'defaultChildRate', 'agencyId'],
   availability: ['date', 'isAvailable', 'baseRate', 'adultRate', 'childRate', 'boatId']

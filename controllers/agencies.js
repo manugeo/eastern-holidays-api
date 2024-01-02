@@ -3,6 +3,7 @@ const Agency = require('../models/agency')
 const Availability = require('../models/availability')
 const Boat = require('../models/boat')
 const { requiredFeilds } = require('../tests/helper')
+const { ALL_FIELDS } = require('../utils/config')
 const logger = require('../utils/logger')
 
 agenciesRouter.get('/', async (req, res) => {
@@ -47,25 +48,32 @@ agenciesRouter.post('/', async (req, res) => {
 agenciesRouter.put('/:id', async (req, res) => {
   const id = req.params.id
   const body = req.body
-  // Todo: Update only the fields supplied. Take rest from the original doc.
-  for (const field of requiredFeilds.agency) {
+
+  const agencyToBeUpdated = await Agency.findById(id).populate('boats')
+  if (!agencyToBeUpdated) {
+    return res.status(404).json({ error: 'Agency not found' })
+  }
+
+  // Todo: Instead of using the 'ALL_FIELDS' from the config, dynamically get all fields from the model.
+  for (const field of ALL_FIELDS.agency) {
+    if (field === 'boatIds') continue // Note: 'boatIds' property cannot be updated from here. It gets updated from the 'boats' router.
     // eslint-disable-next-line eqeqeq
-    if (body[field] == null) {
-      return res.status(400).json({ error: `Missing required field: ${field}` })
+    if (body[field] == null) continue
+    if (field === 'phone') {
+      const phone = (typeof body.phone === 'string') ? body.phone : body.phone.toString()
+      if (phone.length !== 10 || !phone.match(/^[0-9]+$/)) {
+        return res.status(400).json({ error: 'Invalid phone number. Should be a 10-digit number' })
+      }
     }
+    agencyToBeUpdated[field] = body[field]
   }
-  const phone = (typeof body.phone === 'string') ? body.phone : body.phone.toString()
-  if (phone.length !== 10 || !phone.match(/^[0-9]+$/)) {
-    return res.status(400).json({ error: 'Invalid phone number. Should be a 10-digit number' })
-  }
-  // Note: 'boatIds' property cannot be updated from here. It gets updated from the 'boats' router.
-  const agency = { name: body.name }
-  const updatedAgency = await Agency.findByIdAndUpdate(id, agency, { new: true, runValidators: true, context: 'query' })
+  const updatedAgency = await agencyToBeUpdated.save()
   if (!updatedAgency) {
-    res.status(404).json({ error: 'Agency not found' })
+    logger.error(`Failed to update agency. name: ${body.name}, phone: ${body.phone}`)
+    return res.status(500).json({ error: 'Failed to update agency' })
   }
   else {
-    res.json(updatedAgency)
+    return res.status(200).json(updatedAgency)
   }
 })
 
