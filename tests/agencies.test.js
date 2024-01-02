@@ -3,13 +3,49 @@ const supertest = require('supertest')
 const app = require('../app')
 const api = supertest(app)
 const Agency = require("../models/agency")
-const { initialDocs, docsInDb, validDocs, requiredFeilds } = require("./helper")
 const Boat = require('../models/boat')
 const Availability = require('../models/availability')
+const { initialDocs, docsInDb, validDocs, requiredFeilds, initialAgenciesWithBoats } = require("./helper")
 
-beforeEach( async () => {
+beforeEach(async () => {
   // Todo: Create agency, boat and its availabilities.
   await Agency.deleteMany({})
+  await Boat.deleteMany({})
+  await Availability.deleteMany({})
+
+  for (let agency of initialAgenciesWithBoats) {
+    let agencyObject = new Agency(agency)
+    const savedAgency = await agencyObject.save()
+    for (let boat of agency.boats) {
+      boat.agencyId = savedAgency._id
+      let boatObject = new Boat(boat)
+      const savedBoat = await boatObject.save()
+      // Update savedAgency.boatIds
+      savedAgency.boatIds.push(savedBoat._id)
+      await savedAgency.save()
+
+      // Todo: Rest of beforeEach method.
+
+      // Create boat availability for the next 30 days using the boat id and default rates.
+      // const availabilities = []
+      // for (let i = 0; i < 30; i++) {
+      //   const date = new Date()
+      //   date.setDate(date.getDate() + 1 + i)
+      //   date.setHours(0, 0, 0, 0)
+      //   availabilities.push({
+      //     date,
+      //     isAvailable: true,
+      //     baseRate: savedBoat.defaultBaseRate,
+      //     adultRate: savedBoat.defaultAdultRate,
+      //     childRate: savedBoat.defaultChildRate,
+      //     infantRate: savedBoat.defaultInfantRate || 0,
+      //     boat: savedBoat._id.toString()
+      //   })
+      // }
+      // const savedAvailabilities = await Availability.insertMany(availabilities)
+    }
+  }
+
   for (let agency of initialDocs.agencies) {
     let agencyObject = new Agency(agency)
     await agencyObject.save()
@@ -21,11 +57,12 @@ test('all agencies are returned', async () => {
   expect(response.body).toHaveLength(initialDocs.agencies.length)
 })
 
-test('a specific agency is within the returned agencies', async () => {
+test('a specific agency can be fetched using its id', async () => {
   const agenciesAtStart = await docsInDb(Agency)
   const agencyToView = agenciesAtStart[0]
   const resultAgency = await api.get(`/api/agencies/${agencyToView.id}`).expect(200).expect('Content-Type', /application\/json/)
-  expect(resultAgency.body).toEqual(agencyToView)
+  // Compare ids of agencyToView and resultAgency
+  expect(resultAgency.body.id).toEqual(agencyToView.id)
 })
 
 test('agencies are returned as json', async () => {

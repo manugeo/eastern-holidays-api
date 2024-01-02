@@ -5,16 +5,14 @@ const { requiredFeilds } = require('../tests/helper')
 const Availability = require('../models/availability')
 const logger = require('../utils/logger')
 
-// Todo: Populate availabilities ?
 boatsRouter.get('/', async (req, res) => {
   const boats = await Boat.find({}).populate('agency')
   res.json(boats)
 })
 
-// Todo: Populate availabilities ?
 boatsRouter.get('/:id', async (req, res) => {
   const id = req.params.id
-  const boat = await Boat.findById(id).populate('agency')
+  const boat = await Boat.findById(id).populate('agency').populate('availabilities')
   if (boat) {
     res.json(boat)
   } else {

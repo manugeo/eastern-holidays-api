@@ -6,7 +6,7 @@ const { requiredFeilds } = require('../tests/helper')
 const { isValidDateString } = require('../utils/utils')
 const logger = require('../utils/logger')
 
-// Todo: Populate boat
+// Note: Not populating 'boat' property here.
 availabilitiesRouter.get('/', async (req, res) => {
   const availabilities = await Availability.find({})
   res.json(availabilities)
@@ -14,7 +14,7 @@ availabilitiesRouter.get('/', async (req, res) => {
 
 availabilitiesRouter.get('/:id', async (req, res) => {
   const id = req.params.id
-  const availability = await Availability.findById(id)
+  const availability = await Availability.findById(id).populate('boat')
   if (availability) {
     res.json(availability)
   } else {
@@ -25,8 +25,8 @@ availabilitiesRouter.get('/:id', async (req, res) => {
 availabilitiesRouter.get('/boat/:id', async (req, res) => {
   const boatId = req.params.id
   const availabilities = await Availability.find({ boatId })
-  if (!availabilities) {
-    res.status(404).json({ error: 'availabilities not found' })
+  if (!availabilities || availabilities.length === 0) {
+    res.status(404).json({ error: 'Availabilities not found' })
   }
   else {
     res.json(availabilities)
@@ -77,8 +77,12 @@ availabilitiesRouter.post('/', async (req, res) => {
           // Housekeeping!
           // 1. Update boat's availabilityIds
           boatInDb.availabilityIds = [...boatInDb.availabilityIds, savedAvailability._id]
-          await boatInDb.save()
+          const savedBoat = await boatInDb.save()
+          if (!savedBoat) {
+            logger.error(`Failed to update boat with automatically created new availability. Boat id: ${boatId}`)
+          }
 
+          // Todo: Return availability with 'boat' populated(manually).
           res.status(201).json(savedAvailability)
         }
       }
