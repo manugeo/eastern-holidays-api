@@ -2,9 +2,8 @@ const agenciesRouter = require('express').Router()
 const Agency = require('../models/agency')
 const Availability = require('../models/availability')
 const Boat = require('../models/boat')
-const { requiredFeilds } = require('../tests/helper')
-const { ALL_FIELDS } = require('../utils/config')
 const logger = require('../utils/logger')
+const { getAllFieldsFromSchema, getRequiredFieldsFromSchema } = require('../utils/utils')
 
 agenciesRouter.get('/', async (req, res) => {
   // Note: Only populating the 'boats' property when fetching a single agency by id.
@@ -24,7 +23,8 @@ agenciesRouter.get('/:id', async (req, res) => {
 
 agenciesRouter.post('/', async (req, res) => {
   const body = req.body
-  for (const field of requiredFeilds.agency) {
+  const requiredFields = getRequiredFieldsFromSchema(Agency.schema)
+  for (const field of requiredFields) {
     // eslint-disable-next-line eqeqeq
     if (body[field] == null) {
       return res.status(400).json({ error: `Missing required field: ${field}` })
@@ -54,8 +54,8 @@ agenciesRouter.put('/:id', async (req, res) => {
     return res.status(404).json({ error: 'Agency not found' })
   }
 
-  // Todo: Instead of using the 'ALL_FIELDS' from the config, dynamically get all fields from the model.
-  for (const field of ALL_FIELDS.agency) {
+  const allFields = getAllFieldsFromSchema(Agency.schema)
+  for (const field of allFields) {
     if (field === 'boatIds') continue // Note: 'boatIds' property cannot be updated from here. It gets updated from the 'boats' router.
     // eslint-disable-next-line eqeqeq
     if (body[field] == null) continue

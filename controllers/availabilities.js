@@ -2,10 +2,8 @@ const availabilitiesRouter = require('express').Router()
 const { default: mongoose } = require('mongoose')
 const Availability = require('../models/availability')
 const Boat = require('../models/boat')
-const { requiredFeilds } = require('../tests/helper')
-const { isValidDateString } = require('../utils/utils')
+const { isValidDateString, getAllFieldsFromSchema, getRequiredFieldsFromSchema } = require('../utils/utils')
 const logger = require('../utils/logger')
-const { ALL_FIELDS } = require('../utils/config')
 
 availabilitiesRouter.get('/', async (req, res) => {
   const availabilities = await Availability.find({})
@@ -36,7 +34,8 @@ availabilitiesRouter.get('/boat/:id', async (req, res) => {
 availabilitiesRouter.post('/', async (req, res) => {
   const body = req.body
   const { date, isAvailable, baseRate, adultRate, childRate, infantRate, boatId } = body
-  for (const field of requiredFeilds.availability) {
+  const requiredFeilds = getRequiredFieldsFromSchema(Availability.schema)
+  for (const field of requiredFeilds) {
     // eslint-disable-next-line eqeqeq
     if (body[field] == null) {
       return res.status(400).json({ error: `Missing required field: ${field}` })
@@ -98,10 +97,9 @@ availabilitiesRouter.put('/:id', async (req, res) => {
     res.status(404).json({ error: 'Availability not found' })
     return
   }
-  // Todo: Instead of using the 'ALL_FIELDS' from the config, dynamically get all fields from the model.
-  // Eg: const allAvailabilityFields = Availability.schema.paths
 
-  for (const field of ALL_FIELDS.availability) {
+  const allFields = getAllFieldsFromSchema(Availability.schema)
+  for (const field of allFields) {
     if (field === 'date') continue  // Note: For now disabling update of availability's date.
     if (field === 'boatId') continue // Note: An availabiliy's boatId cannot be changed.
     // eslint-disable-next-line eqeqeq

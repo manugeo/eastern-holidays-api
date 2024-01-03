@@ -17,6 +17,16 @@ const isValidDateString = (dateString) => {
   return true // Return true if the date is valid
 }
 
+const getAllFieldsFromSchema = (schema) => {
+  // Note: Filtering out '_id' and '__v' keys.
+  return Object.keys(schema.paths).filter(key => !['_id', '__v'].includes(key))
+}
+const getRequiredFieldsFromSchema = (schema) => {
+  return Object.keys(schema.paths).filter(key => schema.paths[key].isRequired)
+}
+
 module.exports = {
-  isValidDateString
+  isValidDateString,
+  getAllFieldsFromSchema,
+  getRequiredFieldsFromSchema
 }
