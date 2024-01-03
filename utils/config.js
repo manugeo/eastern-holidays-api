@@ -9,14 +9,7 @@ const MONGODB_URI = (process.env.NODE_ENV === 'production')
     ? process.env.TEST_MONGODB_URI
     : process.env.DEV_MONGODB_URI
 
-const ALL_FIELDS = {
-  agency: ['name', 'phone', 'boatIds'],
-  boat: ['numberOfBedrooms', 'boatType', 'minAdultsRequired', 'defaultBaseRate', 'defaultAdultRate', 'defaultChildRate', 'agencyId', 'availabilityIds'],
-  availability: ['date', 'isAvailable', 'baseRate', 'adultRate', 'childRate', 'infantRate', 'boatId']
-}
-
 module.exports = {
   PORT,
-  MONGODB_URI,
-  ALL_FIELDS
+  MONGODB_URI
 }
