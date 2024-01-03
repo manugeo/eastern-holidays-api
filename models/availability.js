@@ -36,6 +36,8 @@ const AvailabilitySchema = new mongoose.Schema({
     ref: 'Boat',
     required: true
   }
+}, {
+  timestamps: true
 })
 
 AvailabilitySchema.virtual('boat', {

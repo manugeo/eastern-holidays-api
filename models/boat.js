@@ -53,6 +53,8 @@ const BoatSchema = new mongoose.Schema({
       ref: 'Availability',
     },
   ],
+}, {
+  timestamps: true
 })
 
 BoatSchema.virtual('agency', {

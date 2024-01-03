@@ -22,6 +22,8 @@ const AgencySchema = new mongoose.Schema({
       ref: 'Boat'
     }
   ]
+}, {
+  timestamps: true
 })
 
 AgencySchema.virtual('boats', {
