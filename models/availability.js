@@ -1,4 +1,5 @@
 const mongoose = require('../db')
+const softDeletePlugin = require('./plugins/softDeletePlugin')
 
 const AvailabilitySchema = new mongoose.Schema({
   date: {
@@ -47,12 +48,16 @@ AvailabilitySchema.virtual('boat', {
   justOne: true
 })
 
+AvailabilitySchema.plugin(softDeletePlugin)
+
 AvailabilitySchema.set('toJSON', {
   transform: (document, returnedObject) => {
     returnedObject.id = returnedObject._id.toString()
     returnedObject.date = returnedObject.date.toISOString()
     delete returnedObject._id
     delete returnedObject.__v
+    delete returnedObject.isDeleted
+    delete returnedObject.deletedAt
   },
   virtuals: true
 })

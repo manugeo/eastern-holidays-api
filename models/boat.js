@@ -1,4 +1,5 @@
 const mongoose = require('../db')
+const softDeletePlugin = require('./plugins/softDeletePlugin')
 
 const BoatSchema = new mongoose.Schema({
   numberOfBedrooms: {
@@ -52,7 +53,7 @@ const BoatSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Availability',
     },
-  ],
+  ]
 }, {
   timestamps: true
 })
@@ -70,11 +71,15 @@ BoatSchema.virtual('availabilities', {
   justOne: false,
 })
 
+BoatSchema.plugin(softDeletePlugin)
+
 BoatSchema.set('toJSON', {
   transform: (document, returnedObject) => {
     returnedObject.id = returnedObject._id.toString()
     delete returnedObject._id
     delete returnedObject.__v
+    delete returnedObject.isDeleted
+    delete returnedObject.deletedAt
   },
   virtuals: true,
 })

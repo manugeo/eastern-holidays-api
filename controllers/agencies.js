@@ -7,13 +7,13 @@ const { getAllFieldsFromSchema, getRequiredFieldsFromSchema } = require('../util
 
 agenciesRouter.get('/', async (req, res) => {
   // Note: Only populating the 'boats' property when fetching a single agency by id.
-  const agencies = await Agency.find({})
+  const agencies = await Agency.find({ isDeleted: false }).populate('boats')
   res.json(agencies)
 })
 
 agenciesRouter.get('/:id', async (req, res) => {
   const id = req.params.id
-  const agency = await Agency.findById(id).populate('boats')
+  const agency = await Agency.findOne({ _id: id, isDeleted: false }).populate('boats')
   if (agency) {
     res.json(agency)
   } else {
@@ -49,7 +49,7 @@ agenciesRouter.put('/:id', async (req, res) => {
   const id = req.params.id
   const body = req.body
 
-  const agencyToBeUpdated = await Agency.findById(id).populate('boats')
+  const agencyToBeUpdated = await Agency.findOne({ _id: id, isDeleted: false }).populate('boats')
   if (!agencyToBeUpdated) {
     return res.status(404).json({ error: 'Agency not found' })
   }
@@ -77,27 +77,36 @@ agenciesRouter.put('/:id', async (req, res) => {
   }
 })
 
-// Todo: See if you could soft delete. Set the 'isDeleted' property to true. Set the 'deletedAt' property. And, filter out the docs when fetching, counting etc.
 agenciesRouter.delete('/:id', async (req, res) => {
   const id = req.params.id
-  const deletedAgency = await Agency.findByIdAndDelete(id)
-  if (deletedAgency) {
-    // Housekeeping:
-    // 1.When deleting an agency, delete all agency boats and their availabilities.
-    for (const boatId of deletedAgency.boatIds) {
-      const deletedBoat = await Boat.findByIdAndDelete(boatId)
-      if (!deletedBoat) {
-        logger.error(`Failed to delete boat after deleting agency. boatId: ${boatId}, agencyId: ${deletedAgency._id}`)
-      }
-      const deletedAvailabilities = await Availability.deleteMany({ boatId })
-      if (!deletedAvailabilities) {
-        logger.error(`Failed to delete boat availabilities after deleting agency. boatId: ${boatId}, agencyId: ${deletedAgency._id}`)
-      }
-    }
-    res.status(204).end()
+  const agencyToBeDeleted = await Agency.findOne({ _id: id, isDeleted: false })
+  if (!agencyToBeDeleted) {
+    return res.status(404).json({ error: 'Agency not found' })
   }
   else {
-    res.status(404).json({ error: 'Agency not found' })
+    agencyToBeDeleted.isDeleted = true
+    agencyToBeDeleted.deletedAt = new Date()
+    const deletedAgency = await agencyToBeDeleted.save()
+    if (!deletedAgency) {
+      logger.error(`Failed to delete agency. id: ${id}`)
+      return res.status(500).json({ error: 'Internal server error' })
+    }
+    else {
+      // Housekeeping:
+      // 1.When deleting an agency, delete all agency boats and their availabilities.
+      for (const boatId of deletedAgency.boatIds) {
+        const updatedBoat = await Boat.updateOne({ _id: boatId, isDeleted: false }, { isDeleted: true, deletedAt: new Date() })
+        if (!updatedBoat) {
+          logger.error(`Failed to delete boat after deleting agency. boatId: ${boatId}, agencyId: ${deletedAgency._id}`)
+        }
+        const deletedAvailabilities = await Availability.updateMany({ boatId, isDeleted: false }, { $set: { isDeleted: true, deletedAt: new Date() } })
+        if (!deletedAvailabilities || !deletedAvailabilities.modifiedCount) {
+          logger.error(`Failed to delete boat availabilities after deleting agency. boatId: ${boatId}, agencyId: ${deletedAgency._id}`)
+        }
+      }
+
+      return res.status(204).end()
+    }
   }
 })
 

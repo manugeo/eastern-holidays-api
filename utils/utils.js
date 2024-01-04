@@ -19,7 +19,7 @@ const isValidDateString = (dateString) => {
 
 const getAllFieldsFromSchema = (schema) => {
   // Note: Filtering out '_id' and '__v' keys.
-  return Object.keys(schema.paths).filter(key => !['_id', '__v'].includes(key))
+  return Object.keys(schema.paths).filter(key => !['_id', '__v', 'isDeleted', 'deletedAt'].includes(key))
 }
 const getRequiredFieldsFromSchema = (schema) => {
   return Object.keys(schema.paths).filter(key => schema.paths[key].isRequired)

@@ -6,13 +6,13 @@ const { isValidDateString, getAllFieldsFromSchema, getRequiredFieldsFromSchema }
 const logger = require('../utils/logger')
 
 availabilitiesRouter.get('/', async (req, res) => {
-  const availabilities = await Availability.find({})
+  const availabilities = await Availability.find({ isDeleted: false })
   res.json(availabilities)
 })
 
 availabilitiesRouter.get('/:id', async (req, res) => {
   const id = req.params.id
-  const availability = await Availability.findById(id).populate('boat')
+  const availability = await Availability.findOne({ _id: id, isDeleted: false }).populate('boat')
   if (availability) {
     res.json(availability)
   } else {
@@ -22,7 +22,7 @@ availabilitiesRouter.get('/:id', async (req, res) => {
 
 availabilitiesRouter.get('/boat/:id', async (req, res) => {
   const boatId = req.params.id
-  const availabilities = await Availability.find({ boatId })
+  const availabilities = await Availability.find({ boatId, isDeleted: false })
   if (!availabilities || availabilities.length === 0) {
     res.status(404).json({ error: 'Availabilities not found' })
   }
@@ -92,7 +92,7 @@ availabilitiesRouter.post('/', async (req, res) => {
 availabilitiesRouter.put('/:id', async (req, res) => {
   const id = req.params.id
   const body = req.body
-  const availabilityToBeUpdated = await Availability.findById(id).populate('boat')
+  const availabilityToBeUpdated = await Availability.findOne({ _id: id, isDeleted: false }).populate('boat')
   if (!availabilityToBeUpdated) {
     res.status(404).json({ error: 'Availability not found' })
     return
@@ -129,33 +129,39 @@ availabilitiesRouter.put('/:id', async (req, res) => {
 
 availabilitiesRouter.delete('/:id', async (req, res) => {
   const id = req.params.id
-  // Note: For some reason 'Rate.findByIdAndRemove' does not work. But 'Rate.findByIdAndDelete' does.
-  // See: https://mongoosejs.com/docs/api/model.html#Model.findByIdAndDelete()
-  // No 'findByIdAndRemove' method is present here.
-  const deletedAvailability = await Availability.findByIdAndDelete(id)
-  if (deletedAvailability) {
-    // Housekeeping!
-    // 1. Update boat's availabilityIds
-    const boatId = deletedAvailability.boatId
-    const boatInDb = await Boat.findById(boatId)
-    if (!boatInDb) {
-      logger.error(`Failed to update boat's availabilityIds. Boat not found: ${boatId}`)
-    }
-    else {
-      boatInDb.availabilityIds = boatInDb.availabilityIds.filter(id => id.toString() !== deletedAvailability._id.toString())
-      await boatInDb.save()
-    }
-
-    res.status(204).end()
+  const availabilityToBeDeleted = await Availability.findOne({ _id: id, isDeleted: false })
+  if (!availabilityToBeDeleted) {
+    return res.status(404).json({ error: 'Availability not found' })
   }
   else {
-    res.status(404).json({ error: 'Availability not found' })
+    availabilityToBeDeleted.isDeleted = true
+    availabilityToBeDeleted.deletedAt = new Date()
+    const deletedAvailability = await availabilityToBeDeleted.save()
+    if (!deletedAvailability) {
+      logger.error(`Failed to delete availability. id: ${id}`)
+      return res.status(500).json({ error: 'Internal server error' })
+    }
+    else {
+      // Housekeeping!
+      // 1. Update boat's availabilityIds
+      const boatId = deletedAvailability.boatId
+      const boatInDb = await Boat.findOne({ _id: boatId, isDeleted: false })
+      if (!boatInDb) {
+        logger.error(`Failed to update boat's availabilityIds after deleting availability. Boat not found: ${boatId}`)
+      }
+      else {
+        boatInDb.availabilityIds = boatInDb.availabilityIds.filter(id => id.toString() !== deletedAvailability._id.toString())
+        await boatInDb.save()
+      }
+
+      return res.status(204).end()
+    }
   }
 })
 
 availabilitiesRouter.delete('/boat/:id', async (req, res) => {
   const id = req.params.id
-  const deletedAvailabilities = await Availability.deleteMany({ boatId: id })
+  const deletedAvailabilities = await Availability.updateMany({ boatId: id, isDeleted: false }, { $set: { isDeleted: true, deletedAt: new Date() } })
   if (!deletedAvailabilities) {
     logger.error(`Failed to delete availabilities for boat: ${id}`)
     res.status(404).json({ error: 'availabilities not found' })
@@ -163,14 +169,11 @@ availabilitiesRouter.delete('/boat/:id', async (req, res) => {
   else {
     // Housekeeping!
     // 1. Update boat's availabilityIds
-    const boatInDb = await Boat.findById(id)
-    if (!boatInDb) {
-      logger.error(`Failed to update boat's availabilityIds. Boat not found: ${id}`)
+    const updatedBoat = await Boat.updateOne({ _id: id, isDeleted: false }, { $set: { availabilityIds: [] } })
+    if (!updatedBoat) {
+      logger.error(`Failed to update boat's availabilityIds after deleting availabilities. Boat not found: ${id}`)
     }
-    else {
-      boatInDb.availabilityIds = []
-      await boatInDb.save()
-    }
+
     res.status(204).end()
   }
 })

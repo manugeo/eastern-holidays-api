@@ -1,5 +1,6 @@
 const mongoose = require('../db')
 const uniqueValidator = require('mongoose-unique-validator')
+const softDeletePlugin = require('./plugins/softDeletePlugin')
 
 const AgencySchema = new mongoose.Schema({
   name: {
@@ -32,6 +33,7 @@ AgencySchema.virtual('boats', {
   foreignField: 'agencyId'
 })
 
+AgencySchema.plugin(softDeletePlugin)
 AgencySchema.plugin(uniqueValidator)
 
 AgencySchema.set('toJSON', {
@@ -39,6 +41,8 @@ AgencySchema.set('toJSON', {
     returnedObject.id = returnedObject._id.toString()
     delete returnedObject._id
     delete returnedObject.__v
+    delete returnedObject.isDeleted
+    delete returnedObject.deletedAt
   },
   virtuals: true
 })

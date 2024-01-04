@@ -6,13 +6,13 @@ const logger = require('../utils/logger')
 const { getAllFieldsFromSchema, getRequiredFieldsFromSchema } = require('../utils/utils')
 
 boatsRouter.get('/', async (req, res) => {
-  const boats = await Boat.find({}).populate('agency')
+  const boats = await Boat.find({ isDeleted: false }).populate('agency')
   res.json(boats)
 })
 
 boatsRouter.get('/:id', async (req, res) => {
   const id = req.params.id
-  const boat = await Boat.findById(id).populate('agency').populate('availabilities')
+  const boat = await Boat.findOne({ _id: id, isDeleted: false }).populate('agency').populate('availabilities')
   if (boat) {
     res.json(boat)
   } else {
@@ -113,7 +113,7 @@ boatsRouter.post('/', async (req, res) => {
 boatsRouter.put('/:id', async (req, res) => {
   const id = req.params.id
   const body = req.body
-  const boatToBeUpdated = await Boat.findById(id).populate('agency').populate('availabilities')
+  const boatToBeUpdated = await Boat.findOne({ _id: id, isDeleted: false }).populate('agency').populate('availabilities')
   if (!boatToBeUpdated) {
     return res.status(404).json({ error: 'Boat not found' })
   }
@@ -154,32 +154,38 @@ boatsRouter.put('/:id', async (req, res) => {
 
 boatsRouter.delete('/:id', async (req, res) => {
   const id = req.params.id
-  const deletedBoat = await Boat.findByIdAndDelete(id)
-  if (deletedBoat) {
+  const boatToBeDeleted = await Boat.findOne({ _id: id, isDeleted: false })
+  if (!boatToBeDeleted) {
+    return res.status(404).json({ error: 'Boat not found' })
+  }
+  boatToBeDeleted.isDeleted = true
+  boatToBeDeleted.deletedAt = new Date()
+  const deletedBoat = await boatToBeDeleted.save()
+  if (!deletedBoat) {
+    logger.error(`Failed to delete boat. id: ${id}`)
+    return res.status(500).json({ error: 'Internal server error' })
+  }
+  else {
     // Housekeeping!
-
     // 1. Update agency's boatIds
-    const agencyInDb = await Agency.findById(deletedBoat.agencyId)
+    const agencyInDb = await Agency.findOne({ _id: deletedBoat.agencyId, isDeleted: false })
     if (!agencyInDb) {
-      logger.error('Failed to update agency boatIds after deleting boat!')
+      logger.error(`Failed to find agency with id: ${deletedBoat.agencyId} to update it's boatIds after deleting boat!`)
     }
     else {
       agencyInDb.boatIds = agencyInDb.boatIds.filter(boatId => boatId.toString() !== id)
       const updatedAgency = await agencyInDb.save()
       if (!updatedAgency) {
-        logger.error('Failed to update agency boatIds after deleting boat!')
+        logger.error(`Failed to update agency with id: ${deletedBoat.agencyId} after deleting boat!`)
       }
     }
     // 2. Delete availabilities for the deleted boat as well.
-    const deletedAvailabilities = await Availability.deleteMany({ boatId: id })
-    if (!deletedAvailabilities) {
-      logger.error('Failed to delete boat availabilities after deleting boat!')
+    const deletedAvailabilities = await Availability.updateMany({ boatId: id, isDeleted: false }, { $set: { isDeleted: true, deletedAt: new Date() } })
+    if (!deletedAvailabilities || !deletedAvailabilities.modifiedCount) {
+      logger.error(`Failed to delete availabilities for boat: ${id}`)
     }
 
     res.status(204).end()
-  }
-  else {
-    res.status(404).json({ error: 'Boat not found' })
   }
 })
 
