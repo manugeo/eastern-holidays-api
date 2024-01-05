@@ -118,7 +118,9 @@ const validDocs = {
     minAdultsRequired: 2,
     defaultBaseRate: 9000,
     defaultAdultRate: 1500,
-    defaultChildRate: 750
+    defaultChildRate: 750,
+    defaultInfantRate: 0,
+    availabilityIds: []
   },
   availability: {
     date: "2024-02-15T18:30:00.000Z",
