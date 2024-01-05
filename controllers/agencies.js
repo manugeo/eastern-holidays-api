@@ -7,7 +7,7 @@ const { getAllFieldsFromSchema, getRequiredFieldsFromSchema } = require('../util
 
 agenciesRouter.get('/', async (req, res) => {
   // Note: Only populating the 'boats' property when fetching a single agency by id.
-  const agencies = await Agency.find({ isDeleted: false }).populate('boats')
+  const agencies = await Agency.find({ isDeleted: false })
   res.json(agencies)
 })
 

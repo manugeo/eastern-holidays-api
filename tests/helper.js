@@ -1,55 +1,59 @@
-const initialAgenciesWithBoats = {
-  agencies: [
-    {
-      name: 'Boat Company',
-      phone: '1234567890',
-      boats: [
-        {
-          numberOfBedrooms: 2,
-          boatType: 'luxury',
-          minAdultsRequired: 2,
-          defaultBaseRate: 9000,
-          defaultAdultRate: 1500,
-          defaultChildRate: 750,
-          defaultInfantRate: 0
-        },
-        {
-          numberOfBedrooms: 1,
-          boatType: 'premium',
-          minAdultsRequired: 1,
-          defaultBaseRate: 5000,
-          defaultAdultRate: 1000,
-          defaultChildRate: 500,
-          defaultInfantRate: 0
-        }
-      ]
-    },
-    {
-      name: 'Holiday Inn',
-      phone: '0987654321',
-      boats: [
-        {
-          numberOfBedrooms: 1,
-          boatType: 'deluxe',
-          minAdultsRequired: 1,
-          defaultBaseRate: 5000,
-          defaultAdultRate: 1000,
-          defaultChildRate: 500,
-          defaultInfantRate: 0
-        },
-        {
-          numberOfBedrooms: 3,
-          boatType: 'premium',
-          minAdultsRequired: 2,
-          defaultBaseRate: 12000,
-          defaultAdultRate: 1500,
-          defaultChildRate: 750,
-          defaultInfantRate: 0
-        }
-      ]
-    }
-  ]
-}
+const initialAgenciesWithBoats = [
+  {
+    name: 'Boat Company',
+    phone: '1234567890',
+    boatIds: [],
+    boats: [
+      {
+        numberOfBedrooms: 2,
+        boatType: 'luxury',
+        minAdultsRequired: 2,
+        defaultBaseRate: 9000,
+        defaultAdultRate: 1500,
+        defaultChildRate: 750,
+        defaultInfantRate: 0,
+        availabilityIds: []
+      },
+      {
+        numberOfBedrooms: 1,
+        boatType: 'premium',
+        minAdultsRequired: 1,
+        defaultBaseRate: 5000,
+        defaultAdultRate: 1000,
+        defaultChildRate: 500,
+        defaultInfantRate: 0,
+        availabilityIds: []
+      }
+    ]
+  },
+  {
+    name: 'Holiday Inn',
+    phone: '0987654321',
+    boatIds: [],
+    boats: [
+      {
+        numberOfBedrooms: 1,
+        boatType: 'deluxe',
+        minAdultsRequired: 1,
+        defaultBaseRate: 5000,
+        defaultAdultRate: 1000,
+        defaultChildRate: 500,
+        defaultInfantRate: 0,
+        availabilityIds: []
+      },
+      {
+        numberOfBedrooms: 3,
+        boatType: 'premium',
+        minAdultsRequired: 2,
+        defaultBaseRate: 12000,
+        defaultAdultRate: 1500,
+        defaultChildRate: 750,
+        defaultInfantRate: 0,
+        availabilityIds: []
+      }
+    ]
+  }
+]
 
 const initialDocs = {
   agencies: [
@@ -105,7 +109,8 @@ const initialDocs = {
 const validDocs = {
   agency: {
     name: 'A Valid Boat Company',
-    phone: '9447888888'
+    phone: '9447888888',
+    boatIds: []
   },
   boat: {
     numberOfBedrooms: 2,
@@ -133,7 +138,7 @@ const requiredFeilds = {
 }
 
 const docsInDb = async (model) => {
-  const docs = await model.find({})
+  const docs = await model.find({ isDeleted: false })
   return docs.map(doc => doc.toJSON())
 }
 
